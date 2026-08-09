@@ -36,6 +36,13 @@ export default function App() {
   const [dedupeWasted, setDedupeWasted] = useState(0);
   const [activeView, setActiveView] = useState<'scan' | 'history'>('scan');
   const [journalEntries, setJournalEntries] = useState<UndoJournalEntry[]>([]);
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [deletionMode, setDeletionMode] = useState<'trash' | 'permanent'>('trash');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [deletionRunning, setDeletionRunning] = useState(false);
+  const [deletionProgress, setDeletionProgress] = useState(0);
+  const [deletionTotal, setDeletionTotal] = useState(0);
+  const [deletionResults, setDeletionResults] = useState<{ totalSucceeded: number; totalFailed: number; bytesReclaimed: number } | null>(null);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -131,6 +138,44 @@ export default function App() {
     setDedupeWasted(0);
     await window.cleer.dedupe.start();
   }, []);
+
+  const togglePathSelection = (path: string, entryRiskTier: RiskTier) => {
+    if (entryRiskTier === 'dangerous') return;
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path); else next.add(path);
+      return next;
+    });
+  };
+
+  const selectedEntries = filteredEntries.filter((e) => selectedPaths.has(e.path));
+  const selectedBytes = selectedEntries.reduce((s, e) => s + e.sizeBytes, 0);
+  const selectedByTier = { safe: 0, caution: 0, dangerous: 0 } as Record<RiskTier, number>;
+  selectedEntries.forEach((e) => { selectedByTier[e.riskTier] += e.sizeBytes; });
+
+  const hasDangerousSelected = selectedEntries.some((e) => e.riskTier === 'dangerous');
+
+  const startDeletion = useCallback(async () => {
+    if (!window.cleer || selectedEntries.length === 0) return;
+    setDeletionRunning(true);
+    setDeletionProgress(0);
+    setDeletionTotal(selectedEntries.length);
+    setDeletionResults(null);
+
+    const paths = selectedEntries.map((e) => e.path);
+    const result = await window.cleer.clean.execute(paths, { mode: deletionMode });
+
+    setDeletionResults({
+      totalSucceeded: result.totalSucceeded,
+      totalFailed: result.totalFailed,
+      bytesReclaimed: result.bytesReclaimed,
+    });
+    setDeletionRunning(false);
+    setDeletionProgress(result.totalSucceeded);
+    setSelectedPaths(new Set());
+    setShowConfirmModal(false);
+    window.cleer.journal.read().then((entries: UndoJournalEntry[]) => setJournalEntries(entries));
+  }, [selectedEntries, deletionMode]);
 
   const toggleCategory = (id: CleanupCategory) => {
     setSelected((prev) => {
@@ -458,7 +503,8 @@ export default function App() {
               {/* Table */}
               <div className="flex-1 overflow-hidden" role="region" aria-label="Scan results">
                 {/* Header */}
-                <div className="px-6 py-2 border-b border-white/[0.06] grid grid-cols-[1fr_140px_100px_120px_24px] gap-4 text-[11px] uppercase tracking-wider text-gray-500 font-semibold">
+                <div className="px-6 py-2 border-b border-white/[0.06] grid grid-cols-[24px_1fr_140px_100px_120px_24px] gap-4 text-[11px] uppercase tracking-wider text-gray-500 font-semibold">
+                  <span></span>
                   <span>Path</span>
                   <span>Category</span>
                   <span className="text-right">Size</span>
@@ -488,10 +534,20 @@ export default function App() {
                         >
                           <button
                             onClick={() => setExpandedIdx(isExpanded ? null : vRow.index)}
-                            className="w-full px-6 py-3 grid grid-cols-[1fr_140px_100px_120px_24px] gap-4 items-center text-left focus:outline-none focus:bg-white/[0.04]"
+                            className="w-full px-6 py-3 grid grid-cols-[24px_1fr_140px_100px_120px_24px] gap-4 items-center text-left focus:outline-none focus:bg-white/[0.04]"
                             aria-expanded={isExpanded}
                             aria-label={`${entry.path}, ${formatBytes(entry.sizeBytes)}, ${entry.category}, ${entry.riskTier} risk`}
                           >
+                            <div className="flex items-center justify-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedPaths.has(entry.path)}
+                                onChange={() => togglePathSelection(entry.path, entry.riskTier)}
+                                disabled={entry.riskTier === 'dangerous'}
+                                className="w-3.5 h-3.5 rounded border-gray-600 bg-transparent text-violet-500 focus:ring-violet-500/30 focus:ring-offset-0 disabled:opacity-30 cursor-pointer"
+                                aria-label={`Select ${truncatePath(entry.path)}`}
+                              />
+                            </div>
                             <div className="flex items-center gap-2.5 min-w-0">
                               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tierColors.dot}`} />
                               <span className="text-sm text-gray-300 truncate font-mono text-[13px]">
@@ -557,6 +613,55 @@ export default function App() {
           )}
         </div>
 
+        {/* Selection summary bar */}
+        {activeView === 'scan' && selectedPaths.size > 0 && (
+          <div className="border-t border-white/[0.06] bg-[#0d0d14] px-6 py-3 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-300">
+                  <span className="font-medium text-white">{selectedPaths.size}</span> items selected
+                </span>
+                <span className="text-sm text-violet-400 font-medium">{formatBytes(selectedBytes)}</span>
+                {selectedByTier.safe > 0 && <span className="text-xs text-emerald-400">safe: {formatBytes(selectedByTier.safe)}</span>}
+                {selectedByTier.caution > 0 && <span className="text-xs text-amber-400">caution: {formatBytes(selectedByTier.caution)}</span>}
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={deletionMode}
+                  onChange={(e) => setDeletionMode(e.target.value as 'trash' | 'permanent')}
+                  className="text-xs bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-violet-500/50"
+                  aria-label="Deletion mode"
+                >
+                  <option value="trash">Move to Trash</option>
+                  <option value="permanent">Delete Permanently</option>
+                </select>
+                <button
+                  onClick={() => { setDeletionResults(null); setShowConfirmModal(true); }}
+                  className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-violet-500/20"
+                >
+                  Clean Selected
+                </button>
+                <button
+                  onClick={() => setSelectedPaths(new Set())}
+                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deletion progress bar */}
+        {deletionRunning && (
+          <div className="h-1 bg-white/[0.04] shrink-0">
+            <div
+              className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all"
+              style={{ width: `${deletionTotal > 0 ? (deletionProgress / deletionTotal) * 100 : 0}%` }}
+            />
+          </div>
+        )}
+
         {/* Bottom progress bar */}
         {state === 'scanning' && (
           <div className="h-1 bg-white/[0.04] shrink-0">
@@ -564,6 +669,25 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <ConfirmModal
+          entries={selectedEntries}
+          mode={deletionMode}
+          hasDangerous={hasDangerousSelected}
+          onConfirm={startDeletion}
+          onCancel={() => setShowConfirmModal(false)}
+        />
+      )}
+
+      {/* Deletion Results */}
+      {deletionResults && !showConfirmModal && (
+        <DeletionResultsModal
+          results={deletionResults}
+          onDismiss={() => setDeletionResults(null)}
+        />
+      )}
     </div>
   );
 }
@@ -715,6 +839,136 @@ function HistoryView({ entries }: { entries: UndoJournalEntry[] }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({
+  entries,
+  mode,
+  hasDangerous,
+  onConfirm,
+  onCancel,
+}: {
+  entries: ClassifiedScanEntry[];
+  mode: string;
+  hasDangerous: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const totalBytes = entries.reduce((s, e) => s + e.sizeBytes, 0);
+  const needsExtraConfirm = hasDangerous || mode === 'permanent';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Confirm deletion">
+      <div className="bg-[#12121a] border border-white/[0.08] rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+        <h3 className="text-lg font-semibold text-gray-200 mb-2">Confirm Cleanup</h3>
+
+        <div className="bg-white/[0.03] rounded-lg p-3 mb-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Items to delete</span>
+            <span className="text-gray-200 font-medium">{entries.length}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-gray-400">Space to reclaim</span>
+            <span className="text-violet-400 font-medium">{formatBytes(totalBytes)}</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-gray-400">Method</span>
+            <span className={mode === 'trash' ? 'text-blue-400' : 'text-rose-400'}>
+              {mode === 'trash' ? 'Move to Trash' : 'Permanent Delete'}
+            </span>
+          </div>
+        </div>
+
+        {needsExtraConfirm && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                {hasDangerous && <p className="text-amber-300">Some items are marked as <strong>dangerous</strong>.</p>}
+                {mode === 'permanent' && <p className="text-amber-300">Permanent deletion <strong>cannot be undone</strong>.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-500 mb-4">
+          Items will be logged in the cleanup journal for recovery.
+        </p>
+
+        <div className="flex items-center justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg ${
+              mode === 'permanent'
+                ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/20'
+                : 'bg-violet-600 hover:bg-violet-500 shadow-violet-500/20'
+            }`}
+          >
+            {mode === 'permanent' ? 'Delete Permanently' : 'Move to Trash'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeletionResultsModal({
+  results,
+  onDismiss,
+}: {
+  results: { totalSucceeded: number; totalFailed: number; bytesReclaimed: number };
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Deletion results">
+      <div className="bg-[#12121a] border border-white/[0.08] rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+        <div className="text-center mb-4">
+          {results.totalFailed === 0 ? (
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
+              <AlertTriangle className="w-6 h-6 text-amber-400" />
+            </div>
+          )}
+          <h3 className="text-lg font-semibold text-gray-200">
+            {results.totalFailed === 0 ? 'Cleanup Complete' : 'Cleanup Finished with Errors'}
+          </h3>
+        </div>
+
+        <div className="space-y-2 mb-5">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Deleted</span>
+            <span className="text-emerald-400 font-medium">{results.totalSucceeded} items</span>
+          </div>
+          {results.totalFailed > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">Failed</span>
+              <span className="text-rose-400 font-medium">{results.totalFailed} items</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Space reclaimed</span>
+            <span className="text-violet-400 font-medium">{formatBytes(results.bytesReclaimed)}</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onDismiss}
+          className="w-full py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-lg text-sm font-medium transition-colors"
+        >
+          Done
+        </button>
       </div>
     </div>
   );
