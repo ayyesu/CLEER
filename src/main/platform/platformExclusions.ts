@@ -44,23 +44,24 @@ function resolveRealPath(input: string): string {
   }
 }
 
+function matchesExclusions(normalized: string, exclusions: string[]): boolean {
+  return exclusions.some((ex) => normalized.startsWith(normalizeForComparison(ex)));
+}
+
 export function isSystemExcluded(path: string, platform: string): boolean {
-  const resolved = resolveRealPath(path);
-  const normalized = normalizeForComparison(resolved);
+  const normalized = normalizeForComparison(path);
+  const resolved = normalizeForComparison(resolveRealPath(path));
 
   switch (platform) {
     case 'win32':
-      return SYSTEM_EXCLUSIONS_WIN.some((ex) =>
-        normalized.startsWith(normalizeForComparison(ex)),
-      );
+      return matchesExclusions(normalized, SYSTEM_EXCLUSIONS_WIN) ||
+             matchesExclusions(resolved, SYSTEM_EXCLUSIONS_WIN);
     case 'darwin':
-      return SYSTEM_EXCLUSIONS_MAC.some((ex) =>
-        normalized.startsWith(normalizeForComparison(ex)),
-      );
+      return matchesExclusions(normalized, SYSTEM_EXCLUSIONS_MAC) ||
+             matchesExclusions(resolved, SYSTEM_EXCLUSIONS_MAC);
     case 'linux':
-      return SYSTEM_EXCLUSIONS_LINUX.some((ex) =>
-        normalized.startsWith(normalizeForComparison(ex)),
-      );
+      return matchesExclusions(normalized, SYSTEM_EXCLUSIONS_LINUX) ||
+             matchesExclusions(resolved, SYSTEM_EXCLUSIONS_LINUX);
     default:
       return false;
   }
