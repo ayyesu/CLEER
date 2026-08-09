@@ -100,6 +100,11 @@ export interface CleerApi {
     onError: (callback: (error: { message: string }) => void) => void;
     removeAllListeners: () => void;
   };
+  dedupe: {
+    start: (options?: { minSizeBytes?: number }) => Promise<{ groups: number }>;
+    onProgress: (callback: (progress: { phase: string; processed: number; total: number }) => void) => void;
+    onComplete: (callback: (result: { groups: DuplicateGroup[]; totalWasted: number }) => void) => void;
+  };
   clean: {
     execute: (entryIds: string[], options: DeletionOptions) => Promise<DeletionSummary>;
   };
@@ -120,6 +125,13 @@ export const CATEGORY_LABELS: Record<CleanupCategory, string> = {
   'orphaned-app': 'Orphaned Apps',
   'recycle-bin': 'Recycle Bin',
 };
+
+export interface DuplicateGroup {
+  keeper: ClassifiedScanEntry;
+  duplicates: ClassifiedScanEntry[];
+  sizeBytes: number;
+  wastedBytes: number;
+}
 
 export const TIER_COLORS: Record<RiskTier, { bg: string; text: string; border: string; dot: string }> = {
   safe: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },

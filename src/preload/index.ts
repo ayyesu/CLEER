@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../main/ipc/ipcChannels';
 import type {
   ClassifiedScanEntry,
   DeletionOptions,
+  DuplicateGroup,
   ScanOptions,
   ScanProgress,
   UndoJournalEntry,
@@ -32,6 +33,18 @@ const cleerApi = {
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_RESULT_BATCH);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_COMPLETE);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_ERROR);
+      ipcRenderer.removeAllListeners(IPC_CHANNELS.DEDUPE_PROGRESS);
+      ipcRenderer.removeAllListeners(IPC_CHANNELS.DEDUPE_COMPLETE);
+    },
+  },
+  dedupe: {
+    start: (options?: { minSizeBytes?: number }) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DEDUPE_START, options),
+    onProgress: (callback: (progress: { phase: string; processed: number; total: number }) => void) => {
+      ipcRenderer.on(IPC_CHANNELS.DEDUPE_PROGRESS, (_e, data) => callback(data));
+    },
+    onComplete: (callback: (result: { groups: DuplicateGroup[]; totalWasted: number }) => void) => {
+      ipcRenderer.on(IPC_CHANNELS.DEDUPE_COMPLETE, (_e, data) => callback(data));
     },
   },
   clean: {
@@ -45,5 +58,3 @@ const cleerApi = {
 };
 
 contextBridge.exposeInMainWorld('cleer', cleerApi);
-
-

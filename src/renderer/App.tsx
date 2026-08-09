@@ -3,10 +3,10 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Search, AlertTriangle, CheckCircle2, Loader2,
   FolderOpen, Play, Square, ChevronRight, HardDrive,
-  Zap, Shield, X, Filter, BarChart3,
+  Zap, Shield, X, Filter, BarChart3, Copy, Sparkles,
 } from 'lucide-react';
 import type {
-  ClassifiedScanEntry, CleanupCategory, CleerApi, RiskTier, ScanProgress,
+  ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, RiskTier, ScanProgress,
 } from '@shared/types';
 import { CATEGORY_LABELS, TIER_COLORS } from '@shared/types';
 import { formatBytes, formatDate, truncatePath } from './utils';
@@ -30,6 +30,10 @@ export default function App() {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [scanComplete, setScanComplete] = useState(false);
+  const [dedupeGroups, setDedupeGroups] = useState<DuplicateGroup[]>([]);
+  const [dedupeRunning, setDedupeRunning] = useState(false);
+  const [dedupeProgress, setDedupeProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [dedupeWasted, setDedupeWasted] = useState(0);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +52,17 @@ export default function App() {
     cleer.scan.onError((e: { message: string }) => {
       setErrorMsg(e.message);
       setState('error');
+    });
+
+    cleer.dedupe.onProgress((p: { processed: number; total: number }) => {
+      setDedupeProgress(p);
+    });
+    cleer.dedupe.onComplete((result: { groups: DuplicateGroup[]; totalWasted: number }) => {
+      setDedupeGroups(result.groups);
+      setDedupeWasted(result.totalWasted);
+      setDedupeRunning(false);
+      setDedupeProgress(null);
+      setEntries((prev) => [...prev]);
     });
 
     return () => cleer.scan.removeAllListeners();
@@ -105,6 +120,14 @@ export default function App() {
     await window.cleer?.scan.abort();
     setState(entries.length > 0 ? 'results' : 'idle');
   }, [entries.length]);
+
+  const startDedupe = useCallback(async () => {
+    if (!window.cleer) return;
+    setDedupeRunning(true);
+    setDedupeGroups([]);
+    setDedupeWasted(0);
+    await window.cleer.dedupe.start();
+  }, []);
 
   const toggleCategory = (id: CleanupCategory) => {
     setSelected((prev) => {
@@ -295,12 +318,97 @@ export default function App() {
                     Reclaimable: <span className="text-violet-400 font-medium">{formatBytes(filteredEntries.reduce((s, e) => s + e.sizeBytes, 0))}</span>
                   </span>
                 </div>
+                {dedupeWasted > 0 && (
+                  <div className="flex items-center gap-2 ml-auto mr-4">
+                    <Copy className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm text-amber-400">
+                      {dedupeGroups.length} duplicate groups · {formatBytes(dedupeWasted)} wasted
+                    </span>
+                  </div>
+                )}
                 {search && (
                   <span className="text-xs text-gray-500 ml-auto">
                     Filtered by "{search}"
                   </span>
                 )}
               </div>
+
+              {/* Dedupe button */}
+              <div className="px-6 py-2 border-b border-white/[0.06] shrink-0">
+                {dedupeRunning ? (
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                    <span className="text-sm text-gray-400">
+                      Finding duplicates… {dedupeProgress ? `${dedupeProgress.processed}/${dedupeProgress.total}` : ''}
+                    </span>
+                    <div className="flex-1 h-1 bg-white/[0.04] rounded overflow-hidden max-w-xs">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all"
+                        style={{ width: dedupeProgress ? `${(dedupeProgress.processed / Math.max(dedupeProgress.total, 1)) * 100}%` : '0%' }}
+                      />
+                    </div>
+                  </div>
+                ) : dedupeGroups.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm text-gray-400">
+                      Found <span className="text-gray-200 font-medium">{dedupeGroups.length}</span> duplicate groups
+                    </span>
+                    <button
+                      onClick={startDedupe}
+                      className="text-xs text-violet-400 hover:text-violet-300 underline"
+                    >
+                      Re-scan
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={startDedupe}
+                    disabled={entries.length === 0}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Find Duplicates
+                  </button>
+                )}
+              </div>
+
+              {/* Duplicate groups */}
+              {dedupeGroups.length > 0 && (
+                <div className="border-b border-white/[0.06] shrink-0">
+                  <div className="px-6 py-2">
+                    <h3 className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Duplicate Groups</h3>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto px-6 pb-3 space-y-2">
+                    {dedupeGroups.slice(0, 10).map((group, i) => (
+                      <div key={i} className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-gray-400 font-mono truncate max-w-md">
+                            {truncatePath(group.keeper.path)}
+                          </span>
+                          <span className="text-xs text-amber-400 font-medium shrink-0 ml-2">
+                            {group.duplicates.length + 1} copies · {formatBytes(group.wastedBytes)} wasted
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {group.duplicates.map((dup, j) => (
+                            <div key={j} className="flex items-center gap-2 text-xs text-gray-500">
+                              <Copy className="w-3 h-3 shrink-0" />
+                              <span className="font-mono truncate">{truncatePath(dup.path)}</span>
+                              <span className="ml-auto text-gray-600">{formatBytes(dup.sizeBytes)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {dedupeGroups.length > 10 && (
+                      <p className="text-xs text-gray-500 text-center">
+                        +{dedupeGroups.length - 10} more groups
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Table */}
               <div className="flex-1 overflow-hidden" role="region" aria-label="Scan results">

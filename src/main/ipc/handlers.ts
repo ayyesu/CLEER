@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from './ipcChannels';
 import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
 import { createRulesEngine } from '../services/rulesEngine';
+import { createDuplicateDetector } from '../services/duplicateDetector';
 import { readUndoJournal } from '../services/undoJournal';
 import { scanOptionsSchema, deletionOptionsSchema } from '@shared/schemas';
 import type { ClassifiedScanEntry, DeletionSummary } from '@shared/types';
@@ -20,6 +21,7 @@ export function registerIpcHandlers(): void {
   scanner.setRules(rulesEngine.getAllRules());
 
   const deletionExecutor = createDeletionExecutor();
+  const dedetector = createDuplicateDetector();
   let lastResults: ClassifiedScanEntry[] = [];
   let workersDone = 0;
   let totalWorkers = 0;
@@ -63,6 +65,39 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.SCAN_ABORT, async () => {
     scanner.abort();
     return { success: true };
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DEDUPE_START, async (_event, options?) => {
+    sendToRenderers(IPC_CHANNELS.DEDUPE_PROGRESS, {
+      phase: 'hashing',
+      processed: 0,
+      total: lastResults.length,
+    });
+
+    const groups = await dedetector.findDuplicates(lastResults, {
+      minSizeBytes: options?.minSizeBytes,
+      onProgress: (processed, total) => {
+        sendToRenderers(IPC_CHANNELS.DEDUPE_PROGRESS, {
+          phase: 'hashing',
+          processed,
+          total,
+        });
+      },
+    });
+
+    for (const group of groups) {
+      for (const dup of group.duplicates) {
+        const entry = lastResults.find((e) => e.path === dup.path);
+        if (entry) entry.isDuplicateOf = dup.isDuplicateOf;
+      }
+    }
+
+    sendToRenderers(IPC_CHANNELS.DEDUPE_COMPLETE, {
+      groups,
+      totalWasted: groups.reduce((s, g) => s + g.wastedBytes, 0),
+    });
+
+    return { groups: groups.length };
   });
 
   ipcMain.handle(IPC_CHANNELS.CLEAN_EXECUTE, async (_event, payload) => {
