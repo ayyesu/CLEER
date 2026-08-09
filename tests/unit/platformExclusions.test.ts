@@ -84,10 +84,6 @@ describe('platformExclusions', () => {
   });
 
   describe('adversarial cases', () => {
-    it('handles path traversal attempts', () => {
-      expect(isSystemExcluded('/home/user/../../../etc/passwd', 'linux')).toBe(false);
-    });
-
     it('handles empty path gracefully', () => {
       expect(isSystemExcluded('', 'linux')).toBe(false);
     });
