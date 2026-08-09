@@ -1,0 +1,62 @@
+name: Bug Report
+description: Report a bug in CLEER
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report. Given that CLEER deals with disk cleanup and file deletion, please include as much detail as possible to help us reproduce and fix the issue safely.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly. If it involves incorrect file classification or deletion behavior, please specify the affected paths/categories.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (potential data loss or system file deletion)
+        - High (incorrect classification or deletion behavior)
+        - Medium (UI/UX issue or incorrect reporting)
+        - Low (cosmetic or minor inconvenience)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: CLEER Version
+      description: Which version of CLEER are you running?
+      placeholder: "e.g. 0.1.0"
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this issue?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true

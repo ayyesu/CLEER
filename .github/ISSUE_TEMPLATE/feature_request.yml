@@ -1,0 +1,42 @@
+name: Feature Request
+description: Suggest a new feature for CLEER
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe your proposed feature.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - New scan category/rule
+        - UI improvement
+        - Performance improvement
+        - Safety/security improvement
+        - Platform-specific support
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety considerations
+      options:
+        - label: This feature does not involve file deletion
+        - label: This feature involves deletion but does not change existing safety behavior
+        - label: This feature requires review against §7 safety rules (CLEER-architecture.md)

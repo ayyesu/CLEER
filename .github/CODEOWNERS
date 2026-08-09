@@ -1,0 +1,21 @@
+# Default owners
+*           @ayyesu
+
+# Safety-critical code
+src/main/services/deletionExecutor.ts    @ayyesu
+src/main/services/platformExclusions.ts  @ayyesu
+src/main/platform/                       @ayyesu
+
+# Core engine
+src/main/services/scannerEngine.ts       @ayyesu
+src/main/services/rulesEngine.ts         @ayyesu
+src/main/services/riskTierEngine.ts      @ayyesu
+src/main/workers/                        @ayyesu
+
+# Security-sensitive
+src/main/index.ts                        @ayyesu
+src/preload/                             @ayyesu
+src/main/ipc/                            @ayyesu
+
+# Rules data
+rules/                                   @ayyesu
