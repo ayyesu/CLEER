@@ -1,5 +1,6 @@
 export const IPC_CHANNELS = {
   SCAN_START: 'scan:start',
+  SCAN_ABORT: 'scan:abort',
   SCAN_PROGRESS: 'scan:progress',
   SCAN_RESULT_BATCH: 'scan:result-batch',
   SCAN_COMPLETE: 'scan:complete',

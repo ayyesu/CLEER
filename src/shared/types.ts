@@ -84,3 +84,26 @@ export interface RuleDefinition {
   regenerable: boolean;
   description: string;
 }
+
+export interface ScanSummary {
+  totalEntries: number;
+  totalBytes: number;
+}
+
+export interface CleerApi {
+  scan: {
+    start: (options: ScanOptions) => Promise<{ success: boolean; categories: CleanupCategory[] }>;
+    abort: () => Promise<{ success: boolean }>;
+    onProgress: (callback: (progress: ScanProgress) => void) => void;
+    onResultBatch: (callback: (entries: ClassifiedScanEntry[]) => void) => void;
+    onComplete: (callback: (summary: ScanSummary) => void) => void;
+    onError: (callback: (error: { message: string }) => void) => void;
+    removeAllListeners: () => void;
+  };
+  clean: {
+    execute: (entryIds: string[], options: DeletionOptions) => Promise<DeletionSummary>;
+  };
+  journal: {
+    read: () => Promise<UndoJournalEntry[]>;
+  };
+}

@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
-import { registerIpcHandlers } from './ipc/handlers';
+import { registerIpcHandlers, loadRules } from './ipc/handlers';
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -24,6 +24,11 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  const rulesDir = process.env.VITE_DEV_SERVER_URL
+    ? join(process.cwd(), 'rules')
+    : join(__dirname, '../../rules');
+
+  loadRules(rulesDir);
   registerIpcHandlers();
   createWindow();
 
