@@ -6,6 +6,7 @@ vi.mock('electron', () => ({
 
 vi.mock('../../src/main/services/undoJournal', () => ({
   writeUndoJournal: vi.fn(),
+  updateJournalEntry: vi.fn(),
 }));
 
 vi.mock('../../src/main/platform/platformExclusions', () => ({
@@ -67,6 +68,16 @@ describe('DeletionExecutor', () => {
     expect(summary.totalSucceeded).toBe(1);
     expect(summary.bytesReclaimed).toBe(1024);
     expect(mockShell.trashItem).toHaveBeenCalledWith('/home/user/.cache/npm/file');
+  });
+
+  it('journal entries are written in pending state before deletion', async () => {
+    mockShell.trashItem.mockResolvedValue(undefined);
+
+    const executor = createDeletionExecutor();
+    await executor.execute([fakeEntry], { mode: 'trash' });
+
+    const writtenEntries = mockJournal.mock.calls[0][0] as Array<{ status: string }>;
+    expect(writtenEntries[0].status).toBe('pending');
   });
 
   it('reports partial failures without aborting batch', async () => {

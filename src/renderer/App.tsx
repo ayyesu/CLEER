@@ -3,10 +3,10 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Search, AlertTriangle, CheckCircle2, Loader2,
   FolderOpen, Play, Square, ChevronRight, HardDrive,
-  Zap, Shield, X, Filter, BarChart3, Copy, Sparkles,
+  Zap, Shield, X, Filter, BarChart3, Copy, Sparkles, History,
 } from 'lucide-react';
 import type {
-  ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, RiskTier, ScanProgress,
+  ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, RiskTier, ScanProgress, UndoJournalEntry,
 } from '@shared/types';
 import { CATEGORY_LABELS, TIER_COLORS } from '@shared/types';
 import { formatBytes, formatDate, truncatePath } from './utils';
@@ -34,6 +34,8 @@ export default function App() {
   const [dedupeRunning, setDedupeRunning] = useState(false);
   const [dedupeProgress, setDedupeProgress] = useState<{ processed: number; total: number } | null>(null);
   const [dedupeWasted, setDedupeWasted] = useState(0);
+  const [activeView, setActiveView] = useState<'scan' | 'history'>('scan');
+  const [journalEntries, setJournalEntries] = useState<UndoJournalEntry[]>([]);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +50,7 @@ export default function App() {
     cleer.scan.onComplete(() => {
       setScanComplete(true);
       setState('results');
+      window.cleer.journal.read().then((entries: UndoJournalEntry[]) => setJournalEntries(entries));
     });
     cleer.scan.onError((e: { message: string }) => {
       setErrorMsg(e.message);
@@ -242,6 +245,36 @@ export default function App() {
             })}
           </div>
         </div>
+
+        {/* Bottom nav */}
+        <div className="p-3 border-t border-white/[0.06] space-y-1">
+          <button
+            onClick={() => setActiveView('scan')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+              activeView === 'scan' ? 'bg-white/[0.06] text-gray-200' : 'text-gray-500 hover:bg-white/[0.03]'
+            }`}
+            aria-pressed={activeView === 'scan'}
+          >
+            <Zap className="w-4 h-4" />
+            <span>Scanner</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveView('history');
+              window.cleer.journal.read().then((entries: UndoJournalEntry[]) => setJournalEntries(entries));
+            }}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+              activeView === 'history' ? 'bg-white/[0.06] text-gray-200' : 'text-gray-500 hover:bg-white/[0.03]'
+            }`}
+            aria-pressed={activeView === 'history'}
+          >
+            <History className="w-4 h-4" />
+            <span>Recent Cleanups</span>
+            {journalEntries.length > 0 && (
+              <span className="ml-auto text-[11px] text-gray-500">{journalEntries.length}</span>
+            )}
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -260,7 +293,7 @@ export default function App() {
                 </span>
               </div>
             )}
-            {state === 'results' && scanComplete && (
+             {state === 'results' && scanComplete && activeView === 'scan' && (
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span className="text-sm text-gray-400">
@@ -268,9 +301,17 @@ export default function App() {
                 </span>
               </div>
             )}
+            {activeView === 'history' && (
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-400">
+                  <span className="text-gray-200 font-medium">{journalEntries.length}</span> journal entries
+                </span>
+              </div>
+            )}
           </div>
 
-          {(state === 'results' || entries.length > 0) && (
+          {activeView === 'scan' && (state === 'results' || entries.length > 0) && (
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -298,9 +339,13 @@ export default function App() {
 
         {/* Content area */}
         <div className="flex-1 overflow-hidden">
-          {state === 'idle' && entries.length === 0 && <IdleState onStart={startScan} />}
-          {state === 'scanning' && entries.length === 0 && <ScanningState progress={progress} />}
-          {state === 'error' && <ErrorState message={errorMsg} onRetry={startScan} />}
+          {activeView === 'history' ? (
+            <HistoryView entries={journalEntries} />
+          ) : (
+            <>
+            {state === 'idle' && entries.length === 0 && <IdleState onStart={startScan} />}
+            {state === 'scanning' && entries.length === 0 && <ScanningState progress={progress} />}
+            {state === 'error' && <ErrorState message={errorMsg} onRetry={startScan} />}
 
           {sortedEntries.length > 0 ? (
             <div className="h-full flex flex-col">
@@ -508,6 +553,8 @@ export default function App() {
               </div>
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* Bottom progress bar */}
@@ -580,6 +627,94 @@ function ErrorState({ message, onRetry }: { message: string | null; onRetry: () 
         >
           Try Again
         </button>
+      </div>
+    </div>
+  );
+}
+
+function HistoryView({ entries }: { entries: UndoJournalEntry[] }) {
+  const grouped = entries.reduce<Record<string, UndoJournalEntry[]>>((acc, entry) => {
+    const key = entry.batchId;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(entry);
+    return acc;
+  }, {});
+
+  const batches = Object.entries(grouped).sort(([a], [b]) => {
+    const aTime = grouped[a][0]?.deletedAt?.getTime() ?? 0;
+    const bTime = grouped[b][0]?.deletedAt?.getTime() ?? 0;
+    return bTime - aTime;
+  });
+
+  if (entries.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+            <History className="w-8 h-8 text-gray-600" />
+          </div>
+          <p className="text-gray-400 text-sm">No cleanup history yet</p>
+          <p className="text-gray-600 text-xs mt-1">Items you clean will appear here</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto p-6">
+      <h2 className="text-lg font-semibold text-gray-200 mb-4">Recent Cleanups</h2>
+      <div className="space-y-3">
+        {batches.map(([batchId, batchEntries]) => {
+          const batchTime = batchEntries[0]?.deletedAt;
+          const completed = batchEntries.filter((e) => e.status === 'completed').length;
+          const failed = batchEntries.filter((e) => e.status === 'failed').length;
+          const totalBytes = batchEntries
+            .filter((e) => e.status === 'completed')
+            .reduce((s, e) => s + e.sizeBytes, 0);
+
+          return (
+            <div key={batchId} className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm text-gray-300">
+                    {completed} deleted
+                  </span>
+                  {failed > 0 && (
+                    <span className="text-sm text-rose-400">{failed} failed</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-violet-400 font-medium">{formatBytes(totalBytes)}</span>
+                  <span className="text-xs text-gray-500">
+                    {batchTime ? new Date(batchTime).toLocaleString() : ''}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {batchEntries.slice(0, 5).map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-2 text-xs">
+                    {entry.status === 'completed' ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0" />
+                    )}
+                    <span className="text-gray-400 font-mono truncate flex-1">{truncatePath(entry.path)}</span>
+                    <span className="text-gray-600">{formatBytes(entry.sizeBytes)}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                      entry.mode === 'trash' ? 'bg-blue-500/10 text-blue-400' : 'bg-rose-500/10 text-rose-400'
+                    }`}>
+                      {entry.mode}
+                    </span>
+                  </div>
+                ))}
+                {batchEntries.length > 5 && (
+                  <p className="text-xs text-gray-500 pl-5">+{batchEntries.length - 5} more items</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

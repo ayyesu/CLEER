@@ -67,12 +67,16 @@ export interface DeletionSummary {
 }
 
 export interface UndoJournalEntry {
+  id: string;
   path: string;
   sizeBytes: number;
   category: CleanupCategory;
   riskTier: RiskTier;
   deletedAt: Date;
   mode: DeletionMode;
+  status: 'pending' | 'completed' | 'failed';
+  error?: string;
+  batchId: string;
 }
 
 export interface RuleDefinition {
