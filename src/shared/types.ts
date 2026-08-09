@@ -107,3 +107,22 @@ export interface CleerApi {
     read: () => Promise<UndoJournalEntry[]>;
   };
 }
+
+export const CATEGORY_LABELS: Record<CleanupCategory, string> = {
+  'temp': 'Temporary Files',
+  'cache': 'Caches',
+  'log': 'Log Files',
+  'dev-cache': 'Dev Caches',
+  'dev-artifact': 'Dev Artifacts',
+  'duplicate': 'Duplicates',
+  'old-download': 'Old Downloads',
+  'package-manager': 'Package Manager',
+  'orphaned-app': 'Orphaned Apps',
+  'recycle-bin': 'Recycle Bin',
+};
+
+export const TIER_COLORS: Record<RiskTier, { bg: string; text: string; border: string; dot: string }> = {
+  safe: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
+  caution: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', dot: 'bg-amber-400' },
+  dangerous: { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30', dot: 'bg-rose-400' },
+};
