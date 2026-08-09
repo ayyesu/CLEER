@@ -4,22 +4,34 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import type { RuleDefinition } from '@shared/types';
 
-vi.mock('worker_threads', () => {
-  const EventEmitter = require('events');
-  class MockWorker extends EventEmitter {
-    constructor(_path: string, _options?: unknown) {
-      super();
+const { FakeWorker } = vi.hoisted(() => {
+  class FakeWorker {
+    private listeners: Map<string, Array<(data: unknown) => void>> = new Map();
+    constructor() {
       setTimeout(() => {
         this.emit('message', { type: 'entries', data: [] });
         this.emit('message', { type: 'progress', data: { entriesFound: 0, bytesFound: 0, currentPath: '' } });
         this.emit('message', { type: 'done' });
       }, 10);
     }
+    on(event: string, cb: (data: unknown) => void) {
+      if (!this.listeners.has(event)) this.listeners.set(event, []);
+      this.listeners.get(event)!.push(cb);
+    }
+    emit(event: string, data: unknown) {
+      this.listeners.get(event)?.forEach((cb) => cb(data));
+    }
     terminate() {}
     postMessage() {}
   }
-  return { Worker: MockWorker, parentPort: null, workerData: {} };
+  return { FakeWorker };
 });
+
+vi.mock('worker_threads', () => ({
+  Worker: FakeWorker,
+  parentPort: null,
+  workerData: {},
+}));
 
 import { createScannerEngine } from '../../src/main/services/scannerEngine';
 

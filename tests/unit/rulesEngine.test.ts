@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { createRulesEngine } from '../../src/main/services/rulesEngine';
 import { ruleDefinitionSchema } from '../../src/shared/schemas';
@@ -19,15 +19,12 @@ describe('Rules Engine', () => {
         expect(files.length).toBeGreaterThan(0);
 
         for (const file of files) {
-          const raw = require('fs').readFileSync(
-            join(platformDir, file),
-            'utf-8',
-          );
+          const raw = readFileSync(join(platformDir, file), 'utf-8');
           const parsed = JSON.parse(raw);
           const result = ruleDefinitionSchema.safeParse(parsed);
           expect(
             result.success,
-            `Rule file ${platform}/${file} failed validation: ${result.success ? '' : JSON.stringify((result as any).error)}`,
+            `Rule file ${platform}/${file} failed validation: ${result.success ? '' : JSON.stringify((result as { error: unknown }).error)}`,
           ).toBe(true);
         }
       });
