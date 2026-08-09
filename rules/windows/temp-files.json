@@ -1,0 +1,9 @@
+{
+  "id": "windows-temp",
+  "category": "temp",
+  "platforms": ["win32"],
+  "paths": ["\\Temp\\", "\\tmp\\"],
+  "riskTier": "safe",
+  "regenerable": false,
+  "description": "Windows temporary files directory. Safe to clear."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "macos-user-logs",
+  "category": "log",
+  "platforms": ["darwin"],
+  "paths": ["/Library/Logs/"],
+  "riskTier": "safe",
+  "regenerable": false,
+  "description": "User-level macOS logs. Safe to clear; will regenerate as apps run."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "pacman-cache",
+  "category": "package-manager",
+  "platforms": ["linux"],
+  "paths": ["/var/cache/pacman/pkg/"],
+  "riskTier": "caution",
+  "regenerable": true,
+  "description": "Pacman downloaded package cache. Clearing removes local copies of installed packages; reinstalling will require re-download."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "pip-cache-linux",
+  "category": "dev-cache",
+  "platforms": ["linux"],
+  "paths": ["/pip/cache/", "/.cache/pip/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "pip HTTP cache. Safe to clear; pip will re-download packages on next install."
+}

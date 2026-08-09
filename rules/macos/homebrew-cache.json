@@ -1,0 +1,9 @@
+{
+  "id": "homebrew-cache",
+  "category": "package-manager",
+  "platforms": ["darwin"],
+  "paths": ["/Library/Caches/Homebrew/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "Homebrew download cache. Safe to clear; equivalent to `brew cleanup`."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "apt-cache",
+  "category": "package-manager",
+  "platforms": ["linux"],
+  "paths": ["/var/cache/apt/archives/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "APT downloaded package cache. Safe to clear; will re-download on next install."
+}

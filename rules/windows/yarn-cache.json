@@ -1,0 +1,9 @@
+{
+  "id": "yarn-cache-win",
+  "category": "dev-cache",
+  "platforms": ["win32"],
+  "paths": ["\\.yarn\\cache\\"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "Yarn offline cache. Safe to clear; Yarn will re-download on next install."
+}

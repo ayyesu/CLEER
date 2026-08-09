@@ -1,0 +1,9 @@
+{
+  "id": "xcode-derived-data",
+  "category": "dev-artifact",
+  "platforms": ["darwin"],
+  "paths": ["/Library/Developer/Xcode/DerivedData/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "Xcode DerivedData. Safe to clear; Xcode will rebuild as needed."
+}

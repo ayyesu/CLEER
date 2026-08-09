@@ -1,0 +1,9 @@
+{
+  "id": "npm-cache-mac",
+  "category": "dev-cache",
+  "platforms": ["darwin"],
+  "paths": ["/npm-cache/", "/.npm/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "npm package cache. Safe to clear; will be rebuilt on next install."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "pip-cache-mac",
+  "category": "dev-cache",
+  "platforms": ["darwin"],
+  "paths": ["/pip/cache/", "/.cache/pip/"],
+  "riskTier": "safe",
+  "regenerable": true,
+  "description": "pip HTTP cache. Safe to clear; pip will re-download packages on next install."
+}

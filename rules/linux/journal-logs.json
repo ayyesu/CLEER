@@ -1,0 +1,9 @@
+{
+  "id": "systemd-journal-logs",
+  "category": "log",
+  "platforms": ["linux"],
+  "paths": ["/var/log/journal/"],
+  "riskTier": "caution",
+  "regenerable": false,
+  "description": "systemd journal logs. Clearing loses diagnostic history. Defer actual vacuum to `journalctl --vacuum-size`, do not delete files directly."
+}
