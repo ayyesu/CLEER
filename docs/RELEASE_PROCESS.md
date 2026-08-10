@@ -68,12 +68,30 @@ The CI pipeline verifies:
 
 ## Secrets Required
 
-| Secret | Platform | Purpose |
-|--------|----------|---------|
-| `WIN_CSC_LINK` | Windows | Code signing certificate |
-| `WIN_CSC_KEY_PASSWORD` | Windows | Certificate password |
-| `APPLE_ID` | macOS | Apple Developer ID |
-| `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password |
-| `APPLE_TEAM_ID` | macOS | Apple Developer Team ID |
-| `MAC_CERTS` | macOS | P12 certificate (base64) |
-| `MAC_CERTS_PASSWORD` | macOS | P12 certificate password |
+> **Note:** Secrets are optional. The release workflow builds unsigned binaries
+> when secrets are not configured. Unsigned builds work but show security warnings.
+> Configure secrets when ready for production distribution.
+
+### macOS Signing Secrets
+
+| Secret | Type | How to Obtain |
+|--------|------|---------------|
+| `MAC_CERTS` | Base64-encoded P12 | 1. Open Keychain Access → export your "Developer ID Installer" certificate as `.p12`<br>2. `base64 -i cert.p12 \| pbcopy` to encode |
+| `MAC_CERTS_PASSWORD` | String | Password you set when exporting the P12 |
+| `APPLE_ID` | String | Your Apple Developer account email |
+| `APPLE_APP_SPECIFIC_PASSWORD` | String | Generate at appleid.apple.com → App-Specific Passwords |
+| `APPLE_TEAM_ID` | String | Found in Apple Developer portal → Membership → Team ID |
+
+### Windows Signing Secrets
+
+| Secret | Type | How to Obtain |
+|--------|------|---------------|
+| `WIN_CSC_LINK` | File path or URL | Path to your `.pfx` certificate file, or a secure download URL |
+| `WIN_CSC_KEY_PASSWORD` | String | Password for the PFX certificate |
+
+### Configuring Secrets
+
+1. Go to GitHub repo → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Add each secret from the tables above
+4. The next release build will automatically sign the binaries
