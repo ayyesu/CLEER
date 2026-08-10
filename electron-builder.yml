@@ -53,8 +53,8 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: CLEER
-  # installerIcon: build/icon.ico — uncomment when icon is added
-  # uninstallerIcon: build/icon.ico
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
   license: LICENSE
 
 linux:
