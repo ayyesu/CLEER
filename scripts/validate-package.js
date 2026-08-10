@@ -79,7 +79,14 @@ if (fs.existsSync(rendererJs)) {
   for (const f of fs.readdirSync(rendererJs)) {
     if (f.endsWith('.js')) {
       const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
-      if (content.includes('__dirname') && !content.includes('typeof __dirname')) {
+      const lines = content.split('\n');
+      const dirnameLines = lines.filter(l => l.includes('__dirname') && !l.includes('typeof __dirname'));
+      const runtimeRef = dirnameLines.some(l => {
+        const trimmed = l.trim();
+        return !trimmed.startsWith('//') && !trimmed.startsWith('/*') &&
+               !trimmed.includes('"__dirname"') && !trimmed.includes("'__dirname'");
+      });
+      if (runtimeRef) {
         rendererHasDirname = true;
       }
     }
