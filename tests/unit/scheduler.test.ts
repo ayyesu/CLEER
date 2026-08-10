@@ -1,27 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { EventEmitter } = vi.hoisted(() => {
-  const events = require('events');
-  return { EventEmitter: events.EventEmitter };
-});
-
-vi.mock('worker_threads', () => {
-  class FakeWorker extends EventEmitter {
-    constructor() {
-      super();
-      setTimeout(() => {
-        this.emit('message', { type: 'entries', data: [] });
-        this.emit('message', { type: 'progress', data: { entriesFound: 0, bytesFound: 0, currentPath: '' } });
-        this.emit('message', { type: 'permission-denied', data: [] });
-        this.emit('message', { type: 'done' });
-      }, 10);
-    }
-    on() { return this; }
-    terminate() {}
-    postMessage() {}
+class FakeWorker {
+  private listeners: Map<string, Array<(data: unknown) => void>> = new Map();
+  on(event: string, cb: (data: unknown) => void) {
+    if (!this.listeners.has(event)) this.listeners.set(event, []);
+    this.listeners.get(event)!.push(cb);
+    return this;
   }
-  return { Worker: FakeWorker, parentPort: null, workerData: {} };
-});
+  emit(event: string, data: unknown) {
+    this.listeners.get(event)?.forEach((cb) => cb(data));
+  }
+  terminate() {}
+  postMessage() {}
+  start() {
+    setTimeout(() => {
+      this.emit('message', { type: 'entries', data: [] });
+      this.emit('message', { type: 'progress', data: { entriesFound: 0, bytesFound: 0, currentPath: '' } });
+      this.emit('message', { type: 'permission-denied', data: [] });
+      this.emit('message', { type: 'done' });
+    }, 10);
+  }
+}
+
+vi.mock('worker_threads', () => ({
+  Worker: class {
+    constructor() {
+      return new FakeWorker();
+    }
+  },
+  parentPort: null,
+  workerData: {},
+}));
 
 import { createScheduler, ScheduleInterval } from '../../src/main/services/scheduler';
 
