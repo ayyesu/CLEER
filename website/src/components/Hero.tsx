@@ -1,21 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Download, RefreshCw } from 'lucide-react';
-
-const RELEASES_API = '/version.json';
+import { Download } from 'lucide-react';
+import { TAG } from '../version';
 
 export function Hero() {
-  const [version, setVersion] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(RELEASES_API)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.tag_name) setVersion(data.tag_name);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const version = TAG;
+  const loading = false;
 
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">

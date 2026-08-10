@@ -1,13 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Download as DownloadIcon, Terminal, ExternalLink, Monitor, RefreshCw } from 'lucide-react';
+import { VERSION, TAG, ASSETS } from '../version';
 
 type OS = 'windows' | 'macos' | 'linux' | 'unknown';
-
-interface ReleaseInfo {
-  version: string;
-  tag: string;
-  assets: Array<{ name: string; url: string }>;
-}
 
 function detectOS(): OS {
   const ua = navigator.userAgent.toLowerCase();
@@ -18,7 +13,7 @@ function detectOS(): OS {
   return 'unknown';
 }
 
-function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { name: string; url: string } | null {
+function getAssetForOS(os: OS): { name: string; url: string } | null {
   const patterns: Record<OS, RegExp> = {
     windows: /CLEER-Setup-.*\.exe$/,
     macos: /CLEER-.*\.dmg$/,
@@ -26,36 +21,16 @@ function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { 
     unknown: /$/,
   };
 
-  const match = assets.find((a) => patterns[os].test(a.name));
+  const match = ASSETS.find((a) => patterns[os].test(a.name));
   return match || null;
 }
 
-const RELEASES_API = '/version.json';
-
 export function Download() {
-  const [detectedOS, setDetectedOS] = useState<OS>('unknown');
-  const [release, setRelease] = useState<ReleaseInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [detectedOS] = useState<OS>(detectOS());
   const [downloading, setDownloading] = useState<OS | null>(null);
 
-  useEffect(() => {
-    setDetectedOS(detectOS());
-
-    fetch(RELEASES_API)
-      .then((r) => r.json())
-      .then((data) => {
-        setRelease({
-          version: data.tag_name?.replace('v', '') || 'unknown',
-          tag: data.tag_name || '',
-          assets: (data.assets || []).map((a: { name: string; browser_download_url: string }) => ({
-            name: a.name,
-            url: a.browser_download_url,
-          })),
-        });
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const loading = false;
+  const release = { version: VERSION, tag: TAG, assets: ASSETS };
 
   const handleDownload = async (os: OS) => {
     if (!release) return;
