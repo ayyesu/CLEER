@@ -197,11 +197,10 @@ export function registerIpcHandlers(): void {
     return { enabled: notifications.isEnabled };
   });
 
-  ipcMain.handle('download-file', async (_event, { url, filename }: { url: string; filename: string }) => {
-    const { download } = await import('electron');
+  ipcMain.handle('download-file', async (_event, { url }: { url: string; filename: string }) => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
-      await download.downloadURL(win, url);
+      await win.webContents.session.downloadURL(url);
     }
     return { success: true };
   });

@@ -30,7 +30,7 @@ function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { 
   return match || null;
 }
 
-const RELEASES_API = '/api/latest-release';
+const RELEASES_API = '/version.json';
 
 export function Download() {
   const [detectedOS, setDetectedOS] = useState<OS>('unknown');

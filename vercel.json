@@ -1,0 +1,5 @@
+{
+  "framework": "vite",
+  "buildCommand": "cd website && pnpm build",
+  "outputDirectory": "website/dist"
+}

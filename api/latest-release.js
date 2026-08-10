@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
-    return res.status(500).json({ error: 'GITHUB_TOKEN not configured' });
+    return res.status(500).json({ error: 'GITHUB_TOKEN not configured', hasToken: false });
   }
 
   try {
@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch release' });
+      const text = await response.text();
+      return res.status(response.status).json({ error: 'GitHub API failed', status: response.status, body: text.substring(0, 200) });
     }
 
     const data = await response.json();
@@ -35,6 +36,6 @@ export default async function handler(req, res) {
       assets,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: String(err) });
   }
 }
