@@ -23,6 +23,24 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
+function setupAutoUpdater(): void {
+  if (process.env.VITE_DEV_SERVER_URL) return;
+
+  import('electron-updater').then(({ autoUpdater }) => {
+    autoUpdater.checkForUpdatesAndNotify();
+
+    autoUpdater.on('update-available', () => {
+      console.log('Update available');
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+      console.log('Update downloaded, will install on quit');
+    });
+  }).catch((err) => {
+    console.warn('Auto-updater not available:', err);
+  });
+}
+
 app.whenReady().then(() => {
   const rulesDir = process.env.VITE_DEV_SERVER_URL
     ? join(process.cwd(), 'rules')
@@ -31,6 +49,7 @@ app.whenReady().then(() => {
   loadRules(rulesDir);
   registerIpcHandlers();
   createWindow();
+  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

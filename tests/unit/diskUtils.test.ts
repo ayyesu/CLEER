@@ -10,8 +10,6 @@ import {
   isDiskSpaceCritical,
   canWriteJournal,
   formatDiskSpace,
-  LOW_DISK_THRESHOLD_PERCENT,
-  CRITICAL_DISK_THRESHOLD_PERCENT,
 } from '../../src/main/platform/diskUtils';
 import { statfsSync } from 'fs';
 

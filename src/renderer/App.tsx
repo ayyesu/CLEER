@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ipcRenderer } from 'electron';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import FirstRun from './FirstRun';
 import {
   Search, AlertTriangle, CheckCircle2, Loader2,
   FolderOpen, Play, Square, ChevronRight, HardDrive,
@@ -22,6 +23,9 @@ const ALL_CATEGORIES: CleanupCategory[] = [
 ];
 
 export default function App() {
+  const [showFirstRun, setShowFirstRun] = useState(() => {
+    return localStorage.getItem('cleer.firstRunComplete') !== 'true';
+  });
   const [state, setState] = useState<AppState>('idle');
   const [entries, setEntries] = useState<ClassifiedScanEntry[]>([]);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
@@ -202,6 +206,17 @@ export default function App() {
       return next;
     });
   };
+
+  if (showFirstRun) {
+    return (
+      <FirstRun
+        onComplete={() => {
+          localStorage.setItem('cleer.firstRunComplete', 'true');
+          setShowFirstRun(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#0a0a0f] text-gray-100 overflow-hidden">

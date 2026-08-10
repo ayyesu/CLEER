@@ -14,10 +14,6 @@ import {
   pathsAreEqual,
   MAX_PATH_WIN32,
 } from '../../src/main/platform/pathUtils';
-import { statSync } from 'fs';
-
-const mockStatSync = statSync as unknown as ReturnType<typeof vi.fn>;
-
 describe('pathUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
