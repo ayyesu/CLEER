@@ -83,10 +83,25 @@ if (fs.existsSync(rendererJs)) {
       const dirnameLines = lines.filter(l => l.includes('__dirname') && !l.includes('typeof __dirname'));
       const runtimeRef = dirnameLines.some(l => {
         const trimmed = l.trim();
-        return !trimmed.startsWith('//') && !trimmed.startsWith('/*') &&
-               !trimmed.includes('"__dirname"') && !trimmed.includes("'__dirname'");
+        if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
+        const idx = trimmed.indexOf('__dirname');
+        if (idx < 0) return false;
+        const before = idx > 0 ? trimmed[idx - 1] : '';
+        const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
+        if ((before === '"' || before === "'") && (after === '"' || after === "'")) return false;
+        return true;
       });
       if (runtimeRef) {
+        const problemLine = dirnameLines.find(l => {
+          const trimmed = l.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
+          const idx = trimmed.indexOf('__dirname');
+          if (idx < 0) return false;
+          const before = idx > 0 ? trimmed[idx - 1] : '';
+          const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
+          return !((before === '"' || before === "'") && (after === '"' || after === "''));
+        });
+        console.log(`    Problem line: ${problemLine?.trim().substring(0, 120)}`);
         rendererHasDirname = true;
       }
     }
