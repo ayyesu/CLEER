@@ -1,28 +1,30 @@
-import { Download as DownloadIcon, Terminal } from 'lucide-react';
+import { Download as DownloadIcon, Terminal, ExternalLink } from 'lucide-react';
+
+const RELEASES_URL = 'https://github.com/ayyesu/CLEER/releases/latest';
 
 const PLATFORMS = [
   {
     name: 'Windows',
     icon: '🪟',
     methods: [
-      { label: 'Chocolatey', cmd: 'choco install cleer', primary: true },
-      { label: 'Direct Download', cmd: 'CLEER-0.1.0-win.exe', primary: false },
+      { label: 'Chocolatey', cmd: 'choco install cleer', type: 'pm' },
+      { label: 'Direct Download', type: 'download' },
     ],
   },
   {
     name: 'macOS',
     icon: '🍎',
     methods: [
-      { label: 'Homebrew', cmd: 'brew install --cask cleer', primary: true },
-      { label: 'Direct Download', cmd: 'CLEER-0.1.0-arm64.dmg', primary: false },
+      { label: 'Homebrew', cmd: 'brew install --cask cleer', type: 'pm' },
+      { label: 'Direct Download', type: 'download' },
     ],
   },
   {
     name: 'Linux',
     icon: '🐧',
     methods: [
-      { label: 'AppImage', cmd: 'CLEER-0.1.0-x86_64.AppImage', primary: true },
-      { label: 'Arch (AUR)', cmd: 'yay -S cleer', primary: false },
+      { label: 'AppImage', type: 'download' },
+      { label: 'Arch (AUR)', cmd: 'yay -S cleer', type: 'pm' },
     ],
   },
 ];
@@ -53,22 +55,24 @@ export function Download() {
                   <a
                     key={method.label}
                     href={
-                      method.primary
-                        ? method.cmd.includes('choco')
-                          ? '#'
-                          : method.cmd.includes('brew')
-                          ? '#'
-                          : `https://github.com/ayyesu/CLEER/releases/latest/download/${method.cmd}`
-                        : `https://github.com/ayyesu/CLEER/releases/latest/download/${method.cmd}`
+                      method.type === 'download'
+                        ? RELEASES_URL
+                        : '#'
                     }
+                    target={method.type === 'download' ? '_blank' : undefined}
+                    rel={method.type === 'download' ? 'noopener noreferrer' : undefined}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      method.primary
+                      method.type === 'download'
                         ? 'bg-violet-600 hover:bg-violet-500 text-white font-medium'
                         : 'bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 border border-white/[0.06]'
                     }`}
                   >
                     <DownloadIcon className="w-4 h-4 shrink-0" />
-                    <span>{method.label}</span>
+                    <span className="flex-1">{method.label}</span>
+                    {method.type === 'download' && <ExternalLink className="w-3 h-3 opacity-60" />}
+                    {method.type === 'pm' && (
+                      <code className="text-[10px] opacity-70 hidden sm:inline">{method.cmd}</code>
+                    )}
                   </a>
                 ))}
               </div>
