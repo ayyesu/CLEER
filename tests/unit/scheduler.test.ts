@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+
+const { EventEmitter } = vi.hoisted(() => {
+  const events = require('events');
+  return { EventEmitter: events.EventEmitter };
+});
 
 vi.mock('worker_threads', () => {
   class FakeWorker extends EventEmitter {
