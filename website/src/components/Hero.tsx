@@ -1,18 +1,7 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { TAG } from '../version';
 
 export function Hero() {
-  const [version, setVersion] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch('/version.json')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.tag) setVersion(data.tag);
-      })
-      .catch(() => {});
-  }, []);
-
   return (
     <section className="relative overflow-hidden">
       {/* Subtle grid background */}
@@ -23,7 +12,7 @@ export function Hero() {
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#06B6D4]/20 bg-[#06B6D4]/[0.08] px-3 py-1 text-xs text-[#06B6D4]">
             <Sparkles className="h-3 w-3" aria-hidden="true" />
-            {version ? `${version} — Free & Open Source` : 'Free &amp; Open Source'}
+            {TAG} — Free &amp; Open Source
           </div>
 
           <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-gray-50 md:text-6xl">

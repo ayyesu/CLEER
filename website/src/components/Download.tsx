@@ -1,13 +1,8 @@
-import { Download as DownloadIcon, Terminal, Monitor, RefreshCw } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Download as DownloadIcon, Terminal, Monitor } from 'lucide-react';
+import { useState } from 'react';
+import { VERSION, TAG, ASSETS } from '../version';
 
 type OS = 'windows' | 'macos' | 'linux' | 'unknown';
-
-interface ReleaseInfo {
-  version: string;
-  tag: string;
-  assets: Array<{ name: string; url: string }>;
-}
 
 function detectOS(): OS {
   const ua = navigator.userAgent.toLowerCase();
@@ -18,7 +13,7 @@ function detectOS(): OS {
   return 'unknown';
 }
 
-function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { name: string; url: string } | null {
+function getAssetForOS(os: OS): { name: string; url: string } | null {
   const patterns: Record<string, RegExp> = {
     windows: /CLEER-Setup-.*\.exe$/,
     macos: /CLEER-.*\.dmg$/,
@@ -28,7 +23,7 @@ function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { 
   const pattern = patterns[os];
   if (!pattern) return null;
 
-  const match = assets?.find((a) => pattern.test(a.name));
+  const match = ASSETS.find((a) => pattern.test(a.name));
   return match || null;
 }
 
@@ -40,22 +35,12 @@ const PLATFORMS = [
 
 export function Download() {
   const [detectedOS] = useState<OS>(detectOS());
-  const [release, setRelease] = useState<ReleaseInfo | null>(null);
-  const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<OS | null>(null);
 
-  useEffect(() => {
-    fetch('/version.json')
-      .then((r) => r.json())
-      .then((data) => setRelease(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const detectedAsset = release ? getAssetForOS(release.assets, detectedOS) : null;
+  const detectedAsset = getAssetForOS(detectedOS);
 
   const handleDownload = (os: OS) => {
-    const asset = release ? getAssetForOS(release.assets, os) : null;
+    const asset = getAssetForOS(os);
     if (!asset) return;
 
     setDownloading(os);
@@ -82,14 +67,7 @@ export function Download() {
             Download CLEER
           </h2>
           <p className="mt-3 text-gray-400">
-            Free for everyone.{' '}
-            {loading ? (
-              <span className="inline-flex items-center gap-1.5 text-gray-500">
-                <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" /> Checking version…
-              </span>
-            ) : release ? (
-              <>Version {release.version}</>
-            ) : null}
+            Free for everyone. Version {VERSION}.
           </p>
           {detectedOS !== 'unknown' && (
             <div className="mt-3 inline-flex items-center gap-2 text-sm text-[#06B6D4]">
@@ -123,7 +101,7 @@ export function Download() {
         <div className="grid gap-4 md:grid-cols-3">
           {sortedPlatforms.map((platform) => {
             const isDetected = platform.os === detectedOS;
-            const asset = release ? getAssetForOS(release.assets, platform.os) : null;
+            const asset = getAssetForOS(platform.os);
 
             return (
               <div
