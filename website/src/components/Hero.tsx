@@ -1,16 +1,39 @@
-import { Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, RefreshCw } from 'lucide-react';
+
+const RELEASES_API = 'https://api.github.com/repos/ayyesu/CLEER/releases/latest';
 
 export function Hero() {
+  const [version, setVersion] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(RELEASES_API)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.tag_name) setVersion(data.tag_name);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-      {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-violet-600/[0.07] to-transparent pointer-events-none" />
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-600/[0.08] rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-full text-xs text-violet-400 mb-6">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          v0.1.0 — Free and Open Source
+          {loading ? (
+            <span className="flex items-center gap-1.5">
+              <RefreshCw className="w-3 h-3 animate-spin" /> Checking...
+            </span>
+          ) : version ? (
+            `${version} — Free and Open Source`
+          ) : (
+            'Free and Open Source'
+          )}
         </div>
 
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
