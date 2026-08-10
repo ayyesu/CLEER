@@ -43,7 +43,8 @@ jobs:
       - run: pnpm build
 
       - name: Import macOS certificate
-        if: matrix.platform == 'mac'
+        if: matrix.platform == 'mac' && secrets.MAC_CERTS != ''
+        continue-on-error: true
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.MAC_CERTS }}
