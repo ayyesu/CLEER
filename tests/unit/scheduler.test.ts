@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { EventEmitter } from 'events';
-
-vi.mock('worker_threads', () => {
-  class FakeWorker extends EventEmitter {
+const { FakeWorker } = vi.hoisted(() => {
+  const EE = require('events').EventEmitter;
+  class FakeWorker extends EE {
     constructor() {
       super();
       setTimeout(() => {
@@ -17,8 +16,14 @@ vi.mock('worker_threads', () => {
     terminate() {}
     postMessage() {}
   }
-  return { Worker: FakeWorker, parentPort: null, workerData: {} };
+  return { FakeWorker };
 });
+
+vi.mock('worker_threads', () => ({
+  Worker: FakeWorker,
+  parentPort: null,
+  workerData: {},
+}));
 
 import { createScheduler, ScheduleInterval } from '../../src/main/services/scheduler';
 
