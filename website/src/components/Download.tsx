@@ -1,168 +1,146 @@
-import { useState, useEffect } from 'react';
-import { Download as DownloadIcon, Terminal, ExternalLink, Monitor } from 'lucide-react';
-
-const RELEASES_URL = 'https://github.com/ayyesu/CLEER/releases/latest';
+import { Download as DownloadIcon, Terminal, Monitor } from 'lucide-react';
+import { useState } from 'react';
+import { VERSION, TAG, ASSETS } from '../version';
 
 type OS = 'windows' | 'macos' | 'linux' | 'unknown';
 
 function detectOS(): OS {
-  const userAgent = navigator.userAgent.toLowerCase();
+  const ua = navigator.userAgent.toLowerCase();
   const platform = navigator.platform.toLowerCase();
-
-  if (userAgent.includes('win') || platform.includes('win')) return 'windows';
-  if (userAgent.includes('mac') || platform.includes('mac') || platform.includes('darwin')) return 'macos';
-  if (userAgent.includes('linux') || platform.includes('linux')) return 'linux';
+  if (ua.includes('win') || platform.includes('win')) return 'windows';
+  if (ua.includes('mac') || platform.includes('mac') || platform.includes('darwin')) return 'macos';
+  if (ua.includes('linux') || platform.includes('linux')) return 'linux';
   return 'unknown';
 }
 
-interface PlatformConfig {
-  name: string;
-  icon: string;
-  os: OS;
-  methods: Array<{
-    label: string;
-    cmd?: string;
-    type: 'pm' | 'download';
-  }>;
+function getAssetForOS(os: OS): { name: string; url: string } | null {
+  const patterns: Record<string, RegExp> = {
+    windows: /CLEER-Setup-.*\.exe$/,
+    macos: /CLEER-.*\.dmg$/,
+    linux: /CLEER-.*\.AppImage$/,
+  };
+
+  const pattern = patterns[os];
+  if (!pattern) return null;
+
+  const match = ASSETS.find((a) => pattern.test(a.name));
+  return match || null;
 }
 
-const PLATFORMS: PlatformConfig[] = [
-  {
-    name: 'Windows',
-    icon: '🪟',
-    os: 'windows',
-    methods: [
-      { label: 'Chocolatey', cmd: 'choco install cleer', type: 'pm' },
-      { label: 'Direct Download', type: 'download' },
-    ],
-  },
-  {
-    name: 'macOS',
-    icon: '🍎',
-    os: 'macos',
-    methods: [
-      { label: 'Homebrew', cmd: 'brew install --cask cleer', type: 'pm' },
-      { label: 'Direct Download', type: 'download' },
-    ],
-  },
-  {
-    name: 'Linux',
-    icon: '🐧',
-    os: 'linux',
-    methods: [
-      { label: 'AppImage', type: 'download' },
-      { label: 'Arch (AUR)', cmd: 'yay -S cleer', type: 'pm' },
-    ],
-  },
+const PLATFORMS = [
+  { name: 'Windows', icon: '🪟', os: 'windows' as OS, pkg: 'choco install cleer' },
+  { name: 'macOS', icon: '🍎', os: 'macos' as OS, pkg: 'brew install --cask cleer' },
+  { name: 'Linux', icon: '🐧', os: 'linux' as OS, pkg: 'yay -S cleer' },
 ];
 
 export function Download() {
-  const [detectedOS, setDetectedOS] = useState<OS>('unknown');
+  const [detectedOS] = useState<OS>(detectOS());
+  const [downloading, setDownloading] = useState<OS | null>(null);
 
-  useEffect(() => {
-    setDetectedOS(detectOS());
-  }, []);
+  const detectedAsset = getAssetForOS(detectedOS);
 
-  const reorderedPlatforms =
-    detectedOS !== 'unknown'
-      ? [...PLATFORMS].sort((a, b) => {
-          if (a.os === detectedOS) return -1;
-          if (b.os === detectedOS) return 1;
-          return 0;
-        })
-      : PLATFORMS;
+  const handleDownload = (os: OS) => {
+    const asset = getAssetForOS(os);
+    if (!asset) return;
+
+    setDownloading(os);
+
+    const a = document.createElement('a');
+    a.href = asset.url;
+    a.download = asset.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setDownloading(null);
+  };
+
+  const sortedPlatforms = detectedOS !== 'unknown'
+    ? [...PLATFORMS].sort((a, b) => (a.os === detectedOS ? -1 : b.os === detectedOS ? 1 : 0))
+    : PLATFORMS;
 
   return (
-    <section id="download" className="py-20 px-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Download CLEER</h2>
-          <p className="text-gray-400">
-            Free for everyone. Choose your preferred install method.
+    <section id="download" className="border-t border-white/[0.06] py-20">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mb-12">
+          <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            Download CLEER
+          </h2>
+          <p className="mt-3 text-gray-400">
+            Free for everyone. Version {VERSION}.
           </p>
           {detectedOS !== 'unknown' && (
-            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400">
-              <Monitor className="w-3.5 h-3.5" />
-              Detected: {detectedOS === 'windows' ? 'Windows' : detectedOS === 'macos' ? 'macOS' : 'Linux'}
+            <div className="mt-3 inline-flex items-center gap-2 text-sm text-[#06B6D4]">
+              <Monitor className="h-3.5 w-3.5" aria-hidden="true" />
+              {detectedOS === 'windows' ? 'Windows' : detectedOS === 'macos' ? 'macOS' : 'Linux'} detected
             </div>
           )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {reorderedPlatforms.map((platform) => {
+        {detectedOS !== 'unknown' && detectedAsset && (
+          <div className="mb-8 rounded-2xl border border-[#06B6D4]/20 bg-[#06B6D4]/[0.04] p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-gray-100">
+                  Download for {detectedOS === 'windows' ? 'Windows' : detectedOS === 'macos' ? 'macOS' : 'Linux'}
+                </p>
+                <p className="text-sm text-gray-500">{detectedAsset.name}</p>
+              </div>
+              <button
+                onClick={() => handleDownload(detectedOS)}
+                disabled={downloading === detectedOS}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#06B6D4] px-5 py-2.5 text-sm font-medium text-[#08090B] transition-all hover:bg-[#22D3EE] disabled:opacity-50"
+              >
+                <DownloadIcon className="h-4 w-4" aria-hidden="true" />
+                {downloading === detectedOS ? 'Downloading…' : 'Download Now'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {sortedPlatforms.map((platform) => {
             const isDetected = platform.os === detectedOS;
+            const asset = getAssetForOS(platform.os);
 
             return (
               <div
                 key={platform.name}
-                className={`relative bg-white/[0.02] border rounded-xl p-6 transition-all ${
+                className={`rounded-2xl border p-5 transition-all ${
                   isDetected
-                    ? 'border-violet-500/50 ring-1 ring-violet-500/20 shadow-lg shadow-violet-500/5'
-                    : 'border-white/[0.06]'
+                    ? 'border-[#06B6D4]/30 bg-[#06B6D4]/[0.04]'
+                    : 'border-white/[0.06] bg-white/[0.02]'
                 }`}
               >
-                {isDetected && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-violet-600 rounded-full text-[10px] font-medium text-white uppercase tracking-wider">
-                    Recommended
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className="text-xl" aria-hidden="true">{platform.icon}</span>
+                    <span className="font-medium">{platform.name}</span>
+                  </span>
+                  {isDetected && (
+                    <span className="rounded-full bg-[#06B6D4]/[0.1] px-2 py-0.5 text-[10px] font-medium text-[#06B6D4] uppercase tracking-wider">
+                      Detected
+                    </span>
+                  )}
+                </div>
+
+                {asset && (
+                  <button
+                    onClick={() => handleDownload(platform.os)}
+                    className="mb-2 flex w-full items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/[0.08]"
+                  >
+                    <DownloadIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate text-left">{asset.name}</span>
+                  </button>
                 )}
 
-                <div className="text-center mb-4">
-                  <span className="text-3xl">{platform.icon}</span>
-                  <h3 className="text-lg font-semibold mt-2">{platform.name}</h3>
-                </div>
-                <div className="space-y-2">
-                  {platform.methods.map((method) => (
-                    <a
-                      key={method.label}
-                      href={
-                        method.type === 'download'
-                          ? RELEASES_URL
-                          : '#'
-                      }
-                      target={method.type === 'download' ? '_blank' : undefined}
-                      rel={method.type === 'download' ? 'noopener noreferrer' : undefined}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        method.type === 'download'
-                          ? isDetected
-                            ? 'bg-violet-600 hover:bg-violet-500 text-white font-medium shadow-md shadow-violet-500/20'
-                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 border border-white/[0.06]'
-                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 border border-white/[0.06]'
-                      }`}
-                    >
-                      <DownloadIcon className="w-4 h-4 shrink-0" />
-                      <span className="flex-1">{method.label}</span>
-                      {method.type === 'download' && <ExternalLink className="w-3 h-3 opacity-60" />}
-                      {method.type === 'pm' && (
-                        <code className="text-[10px] opacity-70 hidden sm:inline">{method.cmd}</code>
-                      )}
-                    </a>
-                  ))}
+                <div className="flex items-center gap-2 rounded-lg bg-white/[0.02] px-3 py-2 text-xs text-gray-500">
+                  <Terminal className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <code>{platform.pkg}</code>
                 </div>
               </div>
             );
           })}
-        </div>
-
-        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Terminal className="w-5 h-5 text-violet-400" />
-            <span className="font-medium">Package Managers</span>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <code className="text-violet-400">brew install --cask cleer</code>
-              <p className="text-gray-500 mt-1">macOS</p>
-            </div>
-            <div>
-              <code className="text-violet-400">choco install cleer</code>
-              <p className="text-gray-500 mt-1">Windows</p>
-            </div>
-            <div>
-              <code className="text-violet-400">yay -S cleer</code>
-              <p className="text-gray-500 mt-1">Arch Linux</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
