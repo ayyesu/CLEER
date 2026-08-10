@@ -5,10 +5,15 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  ::selection {
+    background: rgba(6, 182, 212, 0.3);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+    scrollbar-color: rgba(6, 182, 212, 0.2) transparent;
   }
 }

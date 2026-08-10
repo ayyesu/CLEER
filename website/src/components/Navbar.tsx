@@ -1,77 +1,88 @@
 import { useState } from 'react';
-import { Zap, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const LINKS = [
   { href: '#features', label: 'Features' },
-  { href: '#screenshots', label: 'Screenshots' },
   { href: '#how-it-works', label: 'How It Works' },
   { href: '#trust', label: 'Safety' },
   { href: '#download', label: 'Download' },
-  { href: '#faq', label: 'FAQ' },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/[0.06]">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">CLEER</span>
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08090B]/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <a href="#" className="flex items-center gap-2.5" aria-label="CLEER home">
+          <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#06B6D4" />
+            <path d="M8 22L16 10L24 22H8Z" fill="#08090B" />
+            <path d="M12 22H20" stroke="#08090B" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <span className="text-lg font-semibold tracking-tight">CLEER</span>
         </a>
 
-        <div className="hidden md:flex items-center gap-8">
-          {LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+        <nav className="hidden md:block" aria-label="Main navigation">
+          <ul className="flex items-center gap-8">
+            {LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  className="text-sm text-gray-400 transition-colors hover:text-gray-100"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="hidden md:block">
+          <a
+            href="#download"
+            className="inline-flex rounded-lg bg-[#06B6D4] px-4 py-2 text-sm font-medium text-[#08090B] transition-all hover:bg-[#22D3EE]"
+          >
+            Download
+          </a>
         </div>
-
-        <a
-          href="#download"
-          className="hidden md:inline-flex px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-medium transition-colors"
-        >
-          Download Free
-        </a>
 
         <button
           className="md:hidden text-gray-400"
           onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
         >
-          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden bg-[#0d0d14] border-b border-white/[0.06] px-6 py-4 space-y-3">
-          {LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="block text-sm text-gray-400 hover:text-gray-200"
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
-            </a>
-          ))}
-          <a
-            href="#download"
-            className="block px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-medium text-center"
-            onClick={() => setOpen(false)}
-          >
-            Download Free
-          </a>
-        </div>
+        <nav className="border-t border-white/[0.06] bg-[#08090B] px-6 py-4 md:hidden" aria-label="Mobile navigation">
+          <ul className="space-y-3">
+            {LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  className="block text-sm text-gray-400 hover:text-gray-100"
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a
+                href="#download"
+                className="inline-flex rounded-lg bg-[#06B6D4] px-4 py-2 text-sm font-medium text-[#08090B]"
+                onClick={() => setOpen(false)}
+              >
+                Download
+              </a>
+            </li>
+          </ul>
+        </nav>
       )}
-    </nav>
+    </header>
   );
 }

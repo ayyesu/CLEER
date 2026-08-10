@@ -1,4 +1,4 @@
-import { Shield, Lock, Code, Eye, CheckCircle2 } from 'lucide-react';
+import { Shield, Lock, Code, CheckCircle2 } from 'lucide-react';
 
 const POINTS = [
   {
