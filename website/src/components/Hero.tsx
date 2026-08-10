@@ -1,4 +1,4 @@
-import { Download, ArrowRight } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 export function Hero() {
   return (
