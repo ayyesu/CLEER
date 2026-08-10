@@ -4,7 +4,6 @@
   "description": "Computer Lifecycle, Efficiency & Environment Recovery — cross-platform disk space reclaimer",
   "author": "ayyesu",
   "license": "MIT",
-  "type": "module",
   "private": true,
   "main": "dist/main/index.js",
   "scripts": {
@@ -20,7 +19,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "version:check": "node scripts/check-version.js",
+    "version:check": "node scripts/check-version.cjs",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
