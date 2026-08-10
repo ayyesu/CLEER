@@ -11,9 +11,6 @@ importers:
       '@tanstack/react-virtual':
         specifier: ^3.14.9
         version: 3.14.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      electron:
-        specifier: ^33.0.0
-        version: 33.4.11
       lucide-react:
         specifier: ^1.30.0
         version: 1.30.0(react@18.3.1)
@@ -57,6 +54,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.5.4(postcss@8.5.26)
+      electron:
+        specifier: ^33.0.0
+        version: 33.4.11
       electron-builder:
         specifier: ^25.0.0
         version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
