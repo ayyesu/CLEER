@@ -99,9 +99,12 @@ if (fs.existsSync(rendererJs)) {
           if (idx < 0) return false;
           const before = idx > 0 ? trimmed[idx - 1] : '';
           const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
-          return !((before === '"' || before === "'") && (after === '"' || after === "''));
+          const isQuote = (c) => c === '"' || c === "'";
+          return !(isQuote(before) && isQuote(after));
         });
-        console.log(`    Problem line: ${problemLine?.trim().substring(0, 120)}`);
+        if (problemLine) {
+          console.log('    Problem line: ' + problemLine.trim().substring(0, 120));
+        }
         rendererHasDirname = true;
       }
     }
