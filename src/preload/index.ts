@@ -7,6 +7,7 @@ import type {
   PermissionStatus,
   ScanOptions,
   ScanProgress,
+  ScheduleInterval,
   UndoJournalEntry,
 } from '@shared/types';
 
@@ -61,6 +62,19 @@ const cleerApi = {
       ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_STATUS),
     openSettings: (): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_OPEN_SETTINGS),
+  },
+  scheduler: {
+    start: (config: { interval: ScheduleInterval; scanOptions: ScanOptions }) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SCHEDULER_START, config),
+    stop: () => ipcRenderer.invoke(IPC_CHANNELS.SCHEDULER_STOP),
+    getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.SCHEDULER_STATUS),
+    onScanDue: (callback: (options: ScanOptions) => void) => {
+      ipcRenderer.on(IPC_CHANNELS.SCHEDULER_SCAN_DUE, (_e, data) => callback(data));
+    },
+  },
+  notifications: {
+    setEnabled: (enabled: boolean) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATION_SETTINGS, enabled),
   },
 };
 

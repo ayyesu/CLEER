@@ -4,7 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Search, AlertTriangle, CheckCircle2, Loader2,
   FolderOpen, Play, Square, ChevronRight, HardDrive,
-  Zap, Shield, X, Filter, BarChart3, Copy, Sparkles, History,
+  Zap, Shield, X, Filter, BarChart3, Copy, Sparkles, History, Clock,
 } from 'lucide-react';
 import type {
   ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, PermissionStatus, RiskTier, ScanProgress, UndoJournalEntry,
@@ -36,6 +36,8 @@ export default function App() {
   const [dedupeProgress, setDedupeProgress] = useState<{ processed: number; total: number } | null>(null);
   const [dedupeWasted, setDedupeWasted] = useState(0);
   const [activeView, setActiveView] = useState<'scan' | 'history'>('scan');
+  const [schedulerEnabled, setSchedulerEnabled] = useState(false);
+  const [schedulerInterval, setSchedulerInterval] = useState<'hourly' | 'daily' | 'weekly'>('daily');
   const [journalEntries, setJournalEntries] = useState<UndoJournalEntry[]>([]);
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus | null>(null);
   const [scanPermissionDenied, setScanPermissionDenied] = useState<string[]>([]);
@@ -326,6 +328,62 @@ export default function App() {
             {journalEntries.length > 0 && (
               <span className="ml-auto text-[11px] text-gray-500">{journalEntries.length}</span>
             )}
+           </button>
+        </div>
+
+        {/* Scheduler settings */}
+        <div className="p-3 border-t border-white/[0.06]">
+          <div className="flex items-center gap-2 px-3 py-1.5">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <span className="text-xs text-gray-400 font-medium">Auto-Scan</span>
+          </div>
+          <div className="px-3 mt-1">
+            <select
+              value={schedulerInterval}
+              onChange={(e) => {
+                const interval = e.target.value as 'hourly' | 'daily' | 'weekly';
+                setSchedulerInterval(interval);
+                if (schedulerEnabled) {
+                  window.cleer.scheduler.start({
+                    interval,
+                    scanOptions: {
+                      categories: Array.from(selected),
+                      targetPaths: [process.env.HOME || process.env.USERPROFILE || '/'],
+                    },
+                  });
+                }
+              }}
+              className="w-full text-xs bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:border-violet-500/50"
+              aria-label="Scheduler interval"
+            >
+              <option value="hourly">Every hour</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">Every week</option>
+            </select>
+          </div>
+          <button
+            onClick={async () => {
+              if (schedulerEnabled) {
+                await window.cleer.scheduler.stop();
+                setSchedulerEnabled(false);
+              } else {
+                await window.cleer.scheduler.start({
+                  interval: schedulerInterval,
+                  scanOptions: {
+                    categories: Array.from(selected),
+                    targetPaths: [process.env.HOME || process.env.USERPROFILE || '/'],
+                  },
+                });
+                setSchedulerEnabled(true);
+              }
+            }}
+            className={`w-full mt-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              schedulerEnabled
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
+                : 'bg-white/[0.04] text-gray-400 border border-white/[0.08] hover:bg-white/[0.06]'
+            }`}
+          >
+            {schedulerEnabled ? 'Enabled' : 'Enable'}
           </button>
         </div>
       </aside>

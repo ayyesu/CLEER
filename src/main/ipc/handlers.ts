@@ -4,10 +4,12 @@ import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
 import { createRulesEngine } from '../services/rulesEngine';
 import { createDuplicateDetector } from '../services/duplicateDetector';
+import { createScheduler } from '../services/scheduler';
+import { createNotificationService } from '../services/notificationService';
 import { detectPermissions } from '../services/permissionsService';
 import { readUndoJournal } from '../services/undoJournal';
 import { scanOptionsSchema, deletionOptionsSchema } from '@shared/schemas';
-import type { ClassifiedScanEntry, DeletionSummary } from '@shared/types';
+import type { ClassifiedScanEntry, DeletionSummary, ScanOptions } from '@shared/types';
 import { sendToRenderers } from './ipcEvents';
 
 let rulesEngine = createRulesEngine();
@@ -131,5 +133,67 @@ export function registerIpcHandlers(): void {
     } else if (process.platform === 'win32') {
       shell.openExternal('ms-settings:privacy-fullaccess');
     }
+  });
+
+  const scheduler = createScheduler();
+  const notifications = createNotificationService();
+  let lastScheduledResults: { totalEntries: number; totalBytes: number } | null = null;
+
+  scheduler.on('scan-due', async (options: ScanOptions) => {
+    const scheduledScanner = createScannerEngine();
+    scheduledScanner.setRules(rulesEngine.getAllRules());
+
+    let totalEntries = 0;
+    let totalBytes = 0;
+
+    scheduledScanner.on('entries', (entries: ClassifiedScanEntry[]) => {
+      totalEntries += entries.length;
+      totalBytes += entries.reduce((s, e) => s + e.sizeBytes, 0);
+    });
+
+    scheduledScanner.on('worker-done', () => {
+      lastScheduledResults = { totalEntries, totalBytes };
+      scheduler.onScanComplete();
+    });
+
+    scheduledScanner.on('error', () => {
+      scheduler.onScanComplete();
+    });
+
+    sendToRenderers(IPC_CHANNELS.SCHEDULER_SCAN_DUE, options);
+    await scheduledScanner.start(options);
+  });
+
+  scheduler.on('scan-complete', () => {
+    if (lastScheduledResults) {
+      notifications.showScanComplete(
+        lastScheduledResults.totalEntries,
+        lastScheduledResults.totalBytes,
+      );
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCHEDULER_START, async (_event, config) => {
+    scheduler.start(config);
+    return { success: true };
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCHEDULER_STOP, async () => {
+    scheduler.stop();
+    return { success: true };
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCHEDULER_STATUS, async () => {
+    return {
+      isActive: scheduler.isActive,
+      isRunning: scheduler.isRunning,
+      nextRun: scheduler.nextRun,
+      config: scheduler.currentConfig,
+    };
+  });
+
+  ipcMain.handle(IPC_CHANNELS.NOTIFICATION_SETTINGS, async (_event, enabled: boolean) => {
+    notifications.setEnabled(enabled);
+    return { enabled: notifications.isEnabled };
   });
 }

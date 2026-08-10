@@ -15,6 +15,11 @@ export const IPC_CHANNELS = {
   JOURNAL_READ: 'journal:read',
   PERMISSION_STATUS: 'permission:status',
   PERMISSION_OPEN_SETTINGS: 'permission:open-settings',
+  SCHEDULER_START: 'scheduler:start',
+  SCHEDULER_STOP: 'scheduler:stop',
+  SCHEDULER_STATUS: 'scheduler:status',
+  SCHEDULER_SCAN_DUE: 'scheduler:scan-due',
+  NOTIFICATION_SETTINGS: 'notification:settings',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

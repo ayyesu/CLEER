@@ -119,6 +119,15 @@ export interface CleerApi {
     getStatus: () => Promise<PermissionStatus>;
     openSettings: () => Promise<void>;
   };
+  scheduler: {
+    start: (config: { interval: ScheduleInterval; scanOptions: ScanOptions }) => Promise<{ success: boolean }>;
+    stop: () => Promise<{ success: boolean }>;
+    getStatus: () => Promise<{ isActive: boolean; isRunning: boolean; nextRun: Date | null; config: unknown }>;
+    onScanDue: (callback: (options: ScanOptions) => void) => void;
+  };
+  notifications: {
+    setEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
+  };
 }
 
 export const CATEGORY_LABELS: Record<CleanupCategory, string> = {
@@ -155,6 +164,8 @@ export interface PermissionStatus {
   actionLabel?: string;
   actionDescription?: string;
 }
+
+export type ScheduleInterval = 'hourly' | 'daily' | 'weekly' | 'never';
 
 export const TIER_COLORS: Record<RiskTier, { bg: string; text: string; border: string; dot: string }> = {
   safe: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
