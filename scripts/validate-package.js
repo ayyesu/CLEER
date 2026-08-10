@@ -79,24 +79,26 @@ if (fs.existsSync(rendererJs)) {
   for (const f of fs.readdirSync(rendererJs)) {
     if (f.endsWith('.js')) {
       const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
-      const lines = content.split('\n');
-      const dirnameLines = lines.filter(l => l.includes('__dirname') && !l.includes('typeof __dirname'));
+      const dirnameRegex = /(?<![.\w])__dirname(?![\w])/;
+      const dirnameLines = content.split('\n').filter(l => dirnameRegex.test(l) && !l.includes('typeof __dirname'));
       const runtimeRef = dirnameLines.some(l => {
         const trimmed = l.trim();
         if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
-        const idx = trimmed.indexOf('__dirname');
-        if (idx < 0) return false;
+        const match = trimmed.match(dirnameRegex);
+        if (!match) return false;
+        const idx = match.index;
         const before = idx > 0 ? trimmed[idx - 1] : '';
         const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
-        if ((before === '"' || before === "'") && (after === '"' || after === "'")) return false;
-        return true;
+        const isQuote = (c) => c === '"' || c === "'";
+        return !(isQuote(before) && isQuote(after));
       });
       if (runtimeRef) {
         const problemLine = dirnameLines.find(l => {
           const trimmed = l.trim();
           if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
-          const idx = trimmed.indexOf('__dirname');
-          if (idx < 0) return false;
+          const match = trimmed.match(dirnameRegex);
+          if (!match) return false;
+          const idx = match.index;
           const before = idx > 0 ? trimmed[idx - 1] : '';
           const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
           const isQuote = (c) => c === '"' || c === "'";
@@ -105,6 +107,8 @@ if (fs.existsSync(rendererJs)) {
         if (problemLine) {
           console.log('    Problem line: ' + problemLine.trim().substring(0, 120));
         }
+        rendererHasDirname = true;
+      }
         rendererHasDirname = true;
       }
     }
