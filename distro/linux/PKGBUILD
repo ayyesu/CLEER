@@ -1,0 +1,21 @@
+# Maintainer: ayyesu <ayyesu@users.noreply.github.com>
+pkgname=cleer
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Computer Lifecycle, Efficiency & Environment Recovery — cross-platform disk space reclaimer"
+arch=('x86_64')
+url="https://github.com/ayyesu/CLEER"
+license=('MIT')
+depends=()
+makedepends=()
+optdepends=()
+provides=("cleer")
+conflicts=("cleer")
+source=("cleer-${pkgver}.AppImage::https://github.com/ayyesu/CLEER/releases/download/v${pkgver}/CLEER-${pkgver}-x86_64.AppImage")
+sha256sums=('SKIP')
+
+package() {
+    install -Dm755 "$srcdir/cleer-${pkgver}.AppImage" "$pkgdir/usr/bin/cleer"
+    install -Dm644 "$srcdir/../cleer.desktop" "$pkgdir/usr/share/applications/cleer.desktop"
+    install -Dm644 "$srcdir/../cleer.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/cleer.svg"
+}

@@ -87,3 +87,28 @@ jobs:
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-package-managers:
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Publish to Chocolatey
+        run: |
+          cd distro/chocolatey
+          choco pack cleer.nuspec --version=${{ steps.version.outputs.VERSION }}
+          choco push cleer.${{ steps.version.outputs.VERSION }}.nupkg --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCOLATEY_API_KEY }}
+        continue-on-error: true
+
+      - name: Publish to Homebrew
+        run: |
+          cd distro/homebrew
+          sed -i 's/version ".*"/version "${{ steps.version.outputs.VERSION }}"/' cleer.rb
+          sed -i 's|download/v.*/CLEER|download/v${{ steps.version.outputs.VERSION }}/CLEER|' cleer.rb
+        continue-on-error: true
