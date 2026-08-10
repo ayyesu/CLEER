@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>cleer</id>
+    <version>0.1.0</version>
+    <title>CLEER</title>
+    <authors>ayyesu</authors>
+    <owners>ayyesu</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/ayyesu/CLEER/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ayyesu/CLEER</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/ayyesu/CLEER/main/build/icon.png</iconUrl>
+    <description>Computer Lifecycle, Efficiency & Environment Recovery — cross-platform disk space reclaimer. Safely find and remove temporary files, caches, logs, and duplicates.</description>
+    <summary>Cross-platform disk space reclaimer</summary>
+    <releaseNotes>https://github.com/ayyesu/CLEER/releases</releaseNotes>
+    <copyright>Copyright © 2026 CLEER</copyright>
+    <tags>disk cleanup utility storage</tags>
+    <packageSourceUrl>https://github.com/ayyesu/CLEER/tree/main/distro/chocolatey</packageSourceUrl>
+    <docsUrl>https://github.com/ayyesu/CLEER/blob/main/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/ayyesu/CLEER/issues</bugTrackerUrl>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
