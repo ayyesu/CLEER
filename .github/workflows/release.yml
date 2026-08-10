@@ -72,3 +72,37 @@ jobs:
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-website-version:
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Update version.json
+        run: |
+          cat > website/public/version.json << EOF
+          {
+            "version": "${{ steps.version.outputs.VERSION }}",
+            "tag": "v${{ steps.version.outputs.VERSION }}",
+            "publishedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "assets": [
+              { "name": "CLEER-Setup-${{ steps.version.outputs.VERSION }}.exe", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-Setup-${{ steps.version.outputs.VERSION }}.exe" },
+              { "name": "CLEER-${{ steps.version.outputs.VERSION }}.dmg", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${{ steps.version.outputs.VERSION }}.dmg" },
+              { "name": "CLEER-${{ steps.version.outputs.VERSION }}-x86_64.AppImage", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${{ steps.version.outputs.VERSION }}-x86_64.AppImage" }
+            ]
+          }
+          EOF
+
+      - name: Commit and push version update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/public/version.json
+          git commit -m "chore: update website version to v${{ steps.version.outputs.VERSION }}"
+          git push
