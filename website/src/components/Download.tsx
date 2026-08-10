@@ -14,14 +14,16 @@ function detectOS(): OS {
 }
 
 function getAssetForOS(os: OS): { name: string; url: string } | null {
-  const patterns: Record<OS, RegExp> = {
+  const patterns: Record<string, RegExp> = {
     windows: /CLEER-Setup-.*\.exe$/,
     macos: /CLEER-.*\.dmg$/,
     linux: /CLEER-.*\.AppImage$/,
-    unknown: /$/,
   };
 
-  const match = ASSETS.find((a) => patterns[os].test(a.name));
+  const pattern = patterns[os];
+  if (!pattern) return null;
+
+  const match = ASSETS?.find((a) => pattern.test(a.name));
   return match || null;
 }
 

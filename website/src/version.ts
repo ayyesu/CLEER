@@ -1,7 +1,7 @@
 // Auto-generated at build time - do not edit
 export const VERSION = '0.1.2';
 export const TAG = 'v0.1.2';
-export const RELEASE_DATE = '2026-08-10T16:43:06.144Z';
+export const RELEASE_DATE = '2026-08-10T16:53:24.385Z';
 
 export interface Asset {
   name: string;
