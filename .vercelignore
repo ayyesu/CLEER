@@ -1,0 +1,9 @@
+﻿node_modules
+dist
+dist-app
+website/node_modules
+website/dist
+.git
+*.log
+.DS_Store
+pnpm-lock.yaml
