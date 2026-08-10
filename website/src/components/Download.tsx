@@ -30,7 +30,7 @@ function getAssetForOS(assets: Array<{ name: string; url: string }>, os: OS): { 
   return match || null;
 }
 
-const RELEASES_API = 'https://api.github.com/repos/ayyesu/CLEER/releases/latest';
+const RELEASES_API = '/api/latest-release';
 
 export function Download() {
   const [detectedOS, setDetectedOS] = useState<OS>('unknown');

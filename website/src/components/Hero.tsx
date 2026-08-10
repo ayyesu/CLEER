@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 
-const RELEASES_API = 'https://api.github.com/repos/ayyesu/CLEER/releases/latest';
+const RELEASES_API = '/api/latest-release';
 
 export function Hero() {
   const [version, setVersion] = useState<string | null>(null);
