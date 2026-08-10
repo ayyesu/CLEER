@@ -1,4 +1,4 @@
-import { Download as DownloadIcon, Terminal, Package } from 'lucide-react';
+import { Download as DownloadIcon, Terminal } from 'lucide-react';
 
 const PLATFORMS = [
   {
