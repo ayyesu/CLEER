@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ipcRenderer } from 'electron';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Search, AlertTriangle, CheckCircle2, Loader2,
@@ -6,7 +7,7 @@ import {
   Zap, Shield, X, Filter, BarChart3, Copy, Sparkles, History,
 } from 'lucide-react';
 import type {
-  ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, RiskTier, ScanProgress, UndoJournalEntry,
+  ClassifiedScanEntry, CleanupCategory, CleerApi, DuplicateGroup, PermissionStatus, RiskTier, ScanProgress, UndoJournalEntry,
 } from '@shared/types';
 import { CATEGORY_LABELS, TIER_COLORS } from '@shared/types';
 import { formatBytes, formatDate, truncatePath } from './utils';
@@ -36,6 +37,8 @@ export default function App() {
   const [dedupeWasted, setDedupeWasted] = useState(0);
   const [activeView, setActiveView] = useState<'scan' | 'history'>('scan');
   const [journalEntries, setJournalEntries] = useState<UndoJournalEntry[]>([]);
+  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus | null>(null);
+  const [scanPermissionDenied, setScanPermissionDenied] = useState<string[]>([]);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [deletionMode, setDeletionMode] = useState<'trash' | 'permanent'>('trash');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -64,15 +67,20 @@ export default function App() {
       setState('error');
     });
 
+    cleer.permissions.getStatus().then((status: PermissionStatus) => {
+      setPermissionStatus(status);
+    });
+
+    ipcRenderer.on('scan:permission-denied', (_e, paths: string[]) => {
+      setScanPermissionDenied(paths);
+    });
+
     cleer.dedupe.onProgress((p: { processed: number; total: number }) => {
       setDedupeProgress(p);
     });
-    cleer.dedupe.onComplete((result: { groups: DuplicateGroup[]; totalWasted: number }) => {
-      setDedupeGroups(result.groups);
-      setDedupeWasted(result.totalWasted);
+    cleer.dedupe.onComplete(() => {
       setDedupeRunning(false);
       setDedupeProgress(null);
-      setEntries((prev) => [...prev]);
     });
 
     return () => cleer.scan.removeAllListeners();
@@ -381,6 +389,67 @@ export default function App() {
             </div>
           )}
         </header>
+
+        {/* Permission banner */}
+        {permissionStatus && permissionStatus.level !== 'full' && activeView === 'scan' && (
+          <div className={`px-6 py-3 border-b shrink-0 ${
+            permissionStatus.level === 'restricted'
+              ? 'bg-rose-500/10 border-rose-500/20'
+              : 'bg-amber-500/10 border-amber-500/20'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${
+                  permissionStatus.level === 'restricted' ? 'text-rose-400' : 'text-amber-400'
+                }`} />
+                <div>
+                  {permissionStatus.warnings.map((w, i) => (
+                    <p key={i} className={`text-sm ${
+                      permissionStatus.level === 'restricted' ? 'text-rose-300' : 'text-amber-300'
+                    }`}>{w}</p>
+                  ))}
+                  {permissionStatus.inaccessiblePaths.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {permissionStatus.inaccessiblePaths.length} path(s) will be skipped
+                    </p>
+                  )}
+                </div>
+              </div>
+              {permissionStatus.actionable && (
+                <button
+                  onClick={() => window.cleer.permissions.openSettings()}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium shrink-0 ${
+                    permissionStatus.level === 'restricted'
+                      ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300'
+                      : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
+                  }`}
+                >
+                  {permissionStatus.actionLabel}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Scan permission-denied banner */}
+        {activeView === 'scan' && scanPermissionDenied.length > 0 && (
+          <div className="px-6 py-2 border-b border-amber-500/20 bg-amber-500/5 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-xs text-amber-300">
+                  {scanPermissionDenied.length} path(s) skipped due to insufficient permissions
+                </span>
+              </div>
+              <button
+                onClick={() => setScanPermissionDenied([])}
+                className="text-xs text-gray-500 hover:text-gray-300"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Content area */}
         <div className="flex-1 overflow-hidden">

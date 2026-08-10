@@ -115,6 +115,10 @@ export interface CleerApi {
   journal: {
     read: () => Promise<UndoJournalEntry[]>;
   };
+  permissions: {
+    getStatus: () => Promise<PermissionStatus>;
+    openSettings: () => Promise<void>;
+  };
 }
 
 export const CATEGORY_LABELS: Record<CleanupCategory, string> = {
@@ -135,6 +139,21 @@ export interface DuplicateGroup {
   duplicates: ClassifiedScanEntry[];
   sizeBytes: number;
   wastedBytes: number;
+}
+
+export type PermissionLevel = 'full' | 'partial' | 'restricted';
+
+export interface PermissionStatus {
+  platform: Platform;
+  level: PermissionLevel;
+  canScanSystem: boolean;
+  canScanHome: boolean;
+  canWriteTrash: boolean;
+  inaccessiblePaths: string[];
+  warnings: string[];
+  actionable: boolean;
+  actionLabel?: string;
+  actionDescription?: string;
 }
 
 export const TIER_COLORS: Record<RiskTier, { bg: string; text: string; border: string; dot: string }> = {

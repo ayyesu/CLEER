@@ -4,6 +4,7 @@ import type {
   ClassifiedScanEntry,
   DeletionOptions,
   DuplicateGroup,
+  PermissionStatus,
   ScanOptions,
   ScanProgress,
   UndoJournalEntry,
@@ -54,6 +55,12 @@ const cleerApi = {
   journal: {
     read: (): Promise<UndoJournalEntry[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.JOURNAL_READ),
+  },
+  permissions: {
+    getStatus: (): Promise<PermissionStatus> =>
+      ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_STATUS),
+    openSettings: (): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_OPEN_SETTINGS),
   },
 };
 

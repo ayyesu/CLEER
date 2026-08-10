@@ -19,6 +19,7 @@ let batch: ScanEntry[] = [];
 let entriesFound = 0;
 let bytesFound = 0;
 let currentPath = '';
+let permissionDeniedPaths: string[] = [];
 let progressTimer: NodeJS.Timeout | null = null;
 
 function flushBatch(): void {
@@ -45,6 +46,11 @@ function stopProgressTimer(): void {
   }
 }
 
+function isPermissionError(err: unknown): boolean {
+  const code = (err as NodeJS.ErrnoException).code;
+  return code === 'EACCES' || code === 'EPERM';
+}
+
 async function walkDir(dir: string, depth: number): Promise<void> {
   if (options.maxDepth && depth > options.maxDepth) return;
   if (isSystemExcluded(dir, process.platform)) return;
@@ -54,7 +60,10 @@ async function walkDir(dir: string, depth: number): Promise<void> {
   let entries: string[];
   try {
     entries = await readdir(dir);
-  } catch {
+  } catch (err) {
+    if (isPermissionError(err)) {
+      permissionDeniedPaths.push(dir);
+    }
     return;
   }
 
@@ -66,7 +75,10 @@ async function walkDir(dir: string, depth: number): Promise<void> {
     let stats;
     try {
       stats = await lstat(fullPath);
-    } catch {
+    } catch (err) {
+      if (isPermissionError(err)) {
+        permissionDeniedPaths.push(fullPath);
+      }
       continue;
     }
 
@@ -109,6 +121,7 @@ async function main(): Promise<void> {
   stopProgressTimer();
   reportProgress();
 
+  parentPort?.postMessage({ type: 'permission-denied', data: permissionDeniedPaths });
   parentPort?.postMessage({ type: 'done' });
 }
 

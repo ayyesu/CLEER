@@ -1,9 +1,10 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { IPC_CHANNELS } from './ipcChannels';
 import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
 import { createRulesEngine } from '../services/rulesEngine';
 import { createDuplicateDetector } from '../services/duplicateDetector';
+import { detectPermissions } from '../services/permissionsService';
 import { readUndoJournal } from '../services/undoJournal';
 import { scanOptionsSchema, deletionOptionsSchema } from '@shared/schemas';
 import type { ClassifiedScanEntry, DeletionSummary } from '@shared/types';
@@ -51,6 +52,9 @@ export function registerIpcHandlers(): void {
           totalEntries: lastResults.length,
           totalBytes: lastResults.reduce((s, e) => s + e.sizeBytes, 0),
         });
+        if (scanner.permissionDeniedPaths.length > 0) {
+          sendToRenderers('scan:permission-denied', scanner.permissionDeniedPaths);
+        }
       }
     });
 
@@ -115,5 +119,17 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.JOURNAL_READ, async () => {
     return readUndoJournal();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.PERMISSION_STATUS, async () => {
+    return detectPermissions(process.platform as 'win32' | 'darwin' | 'linux');
+  });
+
+  ipcMain.handle(IPC_CHANNELS.PERMISSION_OPEN_SETTINGS, async () => {
+    if (process.platform === 'darwin') {
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles');
+    } else if (process.platform === 'win32') {
+      shell.openExternal('ms-settings:privacy-fullaccess');
+    }
   });
 }

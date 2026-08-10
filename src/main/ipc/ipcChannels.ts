@@ -13,6 +13,8 @@ export const IPC_CHANNELS = {
   CLEAN_COMPLETE: 'clean:complete',
   CLEAN_ERROR: 'clean:error',
   JOURNAL_READ: 'journal:read',
+  PERMISSION_STATUS: 'permission:status',
+  PERMISSION_OPEN_SETTINGS: 'permission:open-settings',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

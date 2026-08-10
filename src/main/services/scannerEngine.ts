@@ -13,6 +13,7 @@ export class ScannerEngine extends EventEmitter {
   private workers: Map<string, Worker> = new Map();
   private rules: RuleDefinition[] = [];
   private active = false;
+  private _permissionDeniedPaths: string[] = [];
 
   setRules(rules: RuleDefinition[]): void {
     this.rules = rules;
@@ -21,6 +22,8 @@ export class ScannerEngine extends EventEmitter {
   async start(options: ScanOptions): Promise<void> {
     this.active = true;
     const classifier = createRiskTierEngine(this.rules);
+
+    this._permissionDeniedPaths = [];
 
     for (const category of options.categories) {
       const workerPath = resolve(__dirname, '../workers/scanWorker.js');
@@ -41,6 +44,11 @@ export class ScannerEngine extends EventEmitter {
           case 'progress': {
             const progress = msg.data as ScanProgress;
             this.emit('progress', progress);
+            break;
+          }
+          case 'permission-denied': {
+            const paths = msg.data as string[];
+            this._permissionDeniedPaths.push(...paths);
             break;
           }
           case 'done': {
@@ -72,6 +80,10 @@ export class ScannerEngine extends EventEmitter {
 
   get isActive(): boolean {
     return this.active;
+  }
+
+  get permissionDeniedPaths(): string[] {
+    return [...this._permissionDeniedPaths];
   }
 }
 
