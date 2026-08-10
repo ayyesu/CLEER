@@ -40,6 +40,9 @@ jobs:
 
       - run: pnpm build
 
+      - name: Validate package
+        run: node scripts/validate-package.js
+
       - name: Build macOS
         if: matrix.platform == 'mac'
         run: pnpm package:mac

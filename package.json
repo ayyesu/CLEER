@@ -20,6 +20,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "version:check": "node scripts/check-version.cjs",
+    "validate": "node scripts/validate-package.js",
+    "smoke-test": "node scripts/smoke-test.js",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
