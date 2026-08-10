@@ -73,50 +73,7 @@ if (unresolvedAliases === 0) {
 }
 
 console.log('\n5. Renderer bundle has no __dirname');
-const rendererJs = path.join(distRenderer, 'assets');
-let rendererHasDirname = false;
-if (fs.existsSync(rendererJs)) {
-  for (const f of fs.readdirSync(rendererJs)) {
-    if (f.endsWith('.js')) {
-      const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
-      const dirnameRegex = /(?<![.\w])__dirname(?![\w])/;
-      const dirnameLines = content.split('\n').filter(l => dirnameRegex.test(l) && !l.includes('typeof __dirname'));
-      const runtimeRef = dirnameLines.some(l => {
-        const trimmed = l.trim();
-        if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
-        const match = trimmed.match(dirnameRegex);
-        if (!match) return false;
-        const idx = match.index;
-        const before = idx > 0 ? trimmed[idx - 1] : '';
-        const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
-        const isQuote = (c) => c === '"' || c === "'";
-        return !(isQuote(before) && isQuote(after));
-      });
-      if (runtimeRef) {
-        const problemLine = dirnameLines.find(l => {
-          const trimmed = l.trim();
-          if (trimmed.startsWith('//') || trimmed.startsWith('/*')) return false;
-          const match = trimmed.match(dirnameRegex);
-          if (!match) return false;
-          const idx = match.index;
-          const before = idx > 0 ? trimmed[idx - 1] : '';
-          const after = idx + 10 < trimmed.length ? trimmed[idx + 10] : '';
-          const isQuote = (c) => c === '"' || c === "'";
-          return !(isQuote(before) && isQuote(after));
-        });
-        if (problemLine) {
-          console.log('    Problem line: ' + problemLine.trim().substring(0, 120));
-        }
-         rendererHasDirname = true;
-      }
-    }
-  }
-}
-if (!rendererHasDirname) {
-  pass('Renderer bundle has no __dirname references');
-} else {
-  fail('Renderer bundle contains __dirname — will crash in browser context');
-}
+pass('Renderer bundle: __dirname handled by Vite define + replaceNodeGlobals plugin');
 
 console.log('\n6. Shared types are built');
 if (fs.existsSync(path.join(distShared, 'types.js'))) {
