@@ -107,9 +107,7 @@ if (fs.existsSync(rendererJs)) {
         if (problemLine) {
           console.log('    Problem line: ' + problemLine.trim().substring(0, 120));
         }
-        rendererHasDirname = true;
-      }
-        rendererHasDirname = true;
+         rendererHasDirname = true;
       }
     }
   }
