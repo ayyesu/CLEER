@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC_CHANNELS } from '../main/ipc/ipcChannels';
 import type {
   ClassifiedScanEntry,
   DeletionOptions,
@@ -9,7 +8,31 @@ import type {
   ScanProgress,
   ScheduleInterval,
   UndoJournalEntry,
-} from '@shared/types';
+} from '../shared/types';
+
+const IPC_CHANNELS = {
+  SCAN_START: 'scan:start',
+  SCAN_ABORT: 'scan:abort',
+  SCAN_PROGRESS: 'scan:progress',
+  SCAN_RESULT_BATCH: 'scan:result-batch',
+  SCAN_COMPLETE: 'scan:complete',
+  SCAN_ERROR: 'scan:error',
+  DEDUPE_START: 'dedupe:start',
+  DEDUPE_PROGRESS: 'dedupe:progress',
+  DEDUPE_COMPLETE: 'dedupe:complete',
+  CLEAN_EXECUTE: 'clean:execute',
+  CLEAN_PROGRESS: 'clean:progress',
+  CLEAN_COMPLETE: 'clean:complete',
+  CLEAN_ERROR: 'clean:error',
+  JOURNAL_READ: 'journal:read',
+  PERMISSION_STATUS: 'permission:status',
+  PERMISSION_OPEN_SETTINGS: 'permission:open-settings',
+  SCHEDULER_START: 'scheduler:start',
+  SCHEDULER_STOP: 'scheduler:stop',
+  SCHEDULER_STATUS: 'scheduler:status',
+  SCHEDULER_SCAN_DUE: 'scheduler:scan-due',
+  NOTIFICATION_SETTINGS: 'notification:settings',
+} as const;
 
 const cleerApi = {
   scan: {

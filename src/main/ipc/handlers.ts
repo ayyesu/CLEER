@@ -1,5 +1,5 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
-import { IPC_CHANNELS } from './ipcChannels';
+import { IPC_CHANNELS } from '../../shared/ipc/ipcChannels';
 import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
 import { createRulesEngine } from '../services/rulesEngine';
