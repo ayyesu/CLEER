@@ -36,7 +36,7 @@ export function Download() {
 
   const handleDownload = async (os: OS) => {
     if (!release) return;
-    const asset = getAssetForOS(release.assets, os);
+    const asset = getAssetForOS(os);
     if (!asset) return;
 
     setDownloading(os);
@@ -86,7 +86,7 @@ export function Download() {
       ? [...platforms].sort((a, b) => (a.os === detectedOS ? -1 : b.os === detectedOS ? 1 : 0))
       : platforms;
 
-  const detectedAsset = release ? getAssetForOS(release.assets, detectedOS) : null;
+  const detectedAsset = release ? getAssetForOS(detectedOS) : null;
 
   return (
     <section id="download" className="py-20 px-6">
