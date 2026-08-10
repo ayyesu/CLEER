@@ -44,10 +44,10 @@ describe('packaging config', () => {
     expect(nsisTarget).toBeDefined();
   });
 
-  it('has Windows signing config from env vars', () => {
+  it('has Windows targets without signing (unsigned builds)', () => {
     const win = config.win as Record<string, unknown>;
-    expect(win.sign).toBe(true);
-    expect(win.certificateFile).toContain('WIN_CSC_LINK');
+    const targets = win.target as Array<Record<string, unknown>>;
+    expect(targets.length).toBeGreaterThan(0);
   });
 
   it('has NSIS installer options', () => {
@@ -72,8 +72,8 @@ describe('packaging config', () => {
     expect(publish.repo).toBe('CLEER');
   });
 
-  it('has notarization hook', () => {
-    expect(config.afterSign).toBe('scripts/notarize.js');
+  it('has afterSign hook commented out (not needed for unsigned builds)', () => {
+    expect(config.afterSign).toBeUndefined();
   });
 
   it('includes entitlements for macOS', () => {
