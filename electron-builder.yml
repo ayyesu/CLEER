@@ -9,7 +9,7 @@ files:
   - package.json
 asar: true
 
-afterSign: scripts/notarize.js
+# afterSign: scripts/notarize.js — uncomment when signing certificates are configured
 
 mac:
   category: public.app-category.utilities
@@ -45,10 +45,6 @@ win:
     - target: portable
       arch:
         - x64
-  sign: true
-  certificateFile: ${env.WIN_CSC_LINK}
-  certificatePassword: ${env.WIN_CSC_KEY_PASSWORD}
-  publisherName: CLEER
 nsis:
   oneClick: false
   perMachine: false
