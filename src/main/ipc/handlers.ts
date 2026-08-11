@@ -1,5 +1,5 @@
-import { ipcMain, shell } from 'electron';
-import { IPC_CHANNELS } from './ipcChannels';
+import { ipcMain, shell, BrowserWindow } from 'electron';
+import { IPC_CHANNELS } from '../../shared/ipc/ipcChannels';
 import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
 import { createRulesEngine } from '../services/rulesEngine';
@@ -195,5 +195,13 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.NOTIFICATION_SETTINGS, async (_event, enabled: boolean) => {
     notifications.setEnabled(enabled);
     return { enabled: notifications.isEnabled };
+  });
+
+  ipcMain.handle('download-file', async (_event, { url }: { url: string; filename: string }) => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      await win.webContents.session.downloadURL(url);
+    }
+    return { success: true };
   });
 }

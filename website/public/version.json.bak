@@ -1,0 +1,10 @@
+{
+  "version": "0.1.2",
+  "tag": "v0.1.2",
+  "publishedAt": "2026-08-10T14:30:00Z",
+  "assets": [
+    { "name": "CLEER-Setup-0.1.2.exe", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-Setup-0.1.2.exe" },
+    { "name": "CLEER-0.1.2.dmg", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-0.1.2.dmg" },
+    { "name": "CLEER-0.1.2-x86_64.AppImage", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-0.1.2-x86_64.AppImage" }
+  ]
+}
