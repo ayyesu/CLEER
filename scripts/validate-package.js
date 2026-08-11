@@ -79,7 +79,16 @@ if (fs.existsSync(rendererJs)) {
   for (const f of fs.readdirSync(rendererJs)) {
     if (f.endsWith('.js')) {
       const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
-      if (content.includes('__dirname') && !content.includes('typeof __dirname')) {
+      const lines = content.split('\n');
+      const problemLines = lines.filter(l => {
+        const idx = l.indexOf('__dirname');
+        if (idx < 0) return false;
+        const before = idx > 0 ? l[idx - 1] : '';
+        const after = idx + 10 < l.length ? l[idx + 10] : '';
+        const isQuote = (c) => c === '"' || c === "'";
+        return !(isQuote(before) && isQuote(after));
+      });
+      if (problemLines.length > 0) {
         rendererHasDirname = true;
       }
     }
