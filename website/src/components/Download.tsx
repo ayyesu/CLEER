@@ -1,6 +1,6 @@
 import { Download as DownloadIcon, Terminal, Monitor } from 'lucide-react';
 import { useState } from 'react';
-import { VERSION, ASSETS } from '../version';
+import { VERSION, TAG, ASSETS } from '../version';
 
 type OS = 'windows' | 'macos' | 'linux' | 'unknown';
 
