@@ -73,7 +73,27 @@ if (unresolvedAliases === 0) {
 }
 
 console.log('\n5. Renderer bundle has no __dirname');
+<<<<<<< HEAD
 pass('Renderer bundle: __dirname handled by Vite define + replaceNodeGlobals plugin');
+=======
+const rendererJs = path.join(distRenderer, 'assets');
+let rendererHasDirname = false;
+if (fs.existsSync(rendererJs)) {
+  for (const f of fs.readdirSync(rendererJs)) {
+    if (f.endsWith('.js')) {
+      const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
+      if (content.includes('__dirname') && !content.includes('typeof __dirname')) {
+        rendererHasDirname = true;
+      }
+    }
+  }
+}
+if (!rendererHasDirname) {
+  pass('Renderer bundle has no __dirname references');
+} else {
+  fail('Renderer bundle contains __dirname — will crash in browser context');
+}
+>>>>>>> origin/release
 
 console.log('\n6. Shared types are built');
 if (fs.existsSync(path.join(distShared, 'types.js'))) {
