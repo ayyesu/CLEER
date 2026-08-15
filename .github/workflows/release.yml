@@ -105,13 +105,13 @@ jobs:
           }
           EOF
 
-      - name: Commit website version files to default branch
+      - name: Commit website version files to release branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Tag checkouts are detached; use the contents API so the update lands on
-          # the default branch without a git push (no fast-forward conflicts).
-          BRANCH="$(gh repo view --json defaultBranchRef -q .defaultBranch.name)"
+          # the release branch without a git push (no fast-forward conflicts).
+          BRANCH="release"
           MESSAGE="chore: update website version to v${{ steps.version.outputs.VERSION }}"
           for FILE in website/public/version.json website/src/version.ts; do
             SHA="$(gh api "repos/$GITHUB_REPOSITORY/contents/$FILE?ref=$BRANCH" --jq .sha)"
