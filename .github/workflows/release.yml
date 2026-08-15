@@ -107,7 +107,8 @@ jobs:
 
       - name: Commit website version files to release branch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Admin PAT so the write to the protected release branch is allowed.
+          GH_TOKEN: ${{ secrets.ADMIN_PAT }}
         run: |
           # Tag checkouts are detached; use the contents API so the update lands on
           # the release branch without a git push (no fast-forward conflicts).
