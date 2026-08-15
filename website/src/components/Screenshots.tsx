@@ -1,75 +1,115 @@
 import { useState } from 'react';
+import { MonitorPlay } from 'lucide-react';
 
-const SCREENSHOTS = [
-  {
-    id: 'scanner',
-    title: 'Scanner View',
-    description: 'Select categories and start scanning with live progress',
-    gradient: 'from-violet-600/20 to-indigo-600/20',
-  },
+const SHOTS = [
   {
     id: 'results',
-    title: 'Results',
-    description: 'Browse findings with risk tiers, sizes, and categories',
-    gradient: 'from-emerald-600/20 to-teal-600/20',
+    src: '/screenshots/scanner-results.png',
+    title: 'Scan Results',
+    description: 'Every finding with risk tier, size, and category — sorted by reclaimable space.',
   },
   {
     id: 'duplicates',
+    src: '/screenshots/scanner-duplicates.png',
     title: 'Duplicate Detection',
-    description: 'Find and manage duplicate files safely',
-    gradient: 'from-amber-600/20 to-orange-600/20',
+    description: 'Byte-verified duplicate groups with wasted space, so you keep the right copy.',
   },
   {
-    id: 'cleanup',
-    title: 'Recent Cleanups',
-    description: 'Full history of all cleanup actions',
-    gradient: 'from-blue-600/20 to-cyan-600/20',
+    id: 'selected',
+    src: '/screenshots/scanner-selected.png',
+    title: 'Review & Select',
+    description: 'Pick exactly what to clean and see the total reclaimable space update live.',
+  },
+  {
+    id: 'confirm',
+    src: '/screenshots/scanner-confirm.png',
+    title: 'Explicit Confirmation',
+    description: 'Every cleanup requires confirmation. Permanent deletion always warns first.',
+  },
+  {
+    id: 'history',
+    src: '/screenshots/history.png',
+    title: 'Cleanup Journal',
+    description: 'Every action is logged. Full transparency for everything you remove.',
+  },
+  {
+    id: 'onboarding',
+    src: '/screenshots/first-run.png',
+    title: 'Guided Onboarding',
+    description: 'A clear, honest walkthrough of how CLEER works before you scan anything.',
   },
 ];
 
 export function Screenshots() {
   const [active, setActive] = useState(0);
-  const current = SCREENSHOTS[active];
+  const current = SHOTS[active];
 
   return (
-    <section id="screenshots" className="py-20 px-6 bg-white/[0.01]">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">See It In Action</h2>
-          <p className="text-gray-400">
-            A clean, dark interface designed for clarity and control.
+    <section id="screenshots" className="border-t border-white/[0.06] py-24">
+      <div className="section">
+        <div className="mb-14 text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
+            <MonitorPlay className="h-3.5 w-3.5" aria-hidden="true" />
+            Screenshots
+          </div>
+          <h2 className="section-heading">See it in action</h2>
+          <p className="section-sub">
+            Real screenshots from the actual application — no mockups, no stock images.
           </p>
         </div>
 
-        {/* Screenshot mockup */}
-        <div className="relative rounded-xl border border-white/[0.08] overflow-hidden mb-8">
-          <div className={`aspect-video bg-gradient-to-br ${current.gradient} flex items-center justify-center`}>
-            <div className="text-center p-8">
-              <div className="w-16 h-16 rounded-2xl bg-white/[0.1] border border-white/[0.1] flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl font-bold text-white/80">
-                  {current.title[0]}
-                </span>
+        {/* Main preview */}
+        <div className="relative mx-auto max-w-5xl">
+          <div
+            className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-emerald-500/15 to-cyan-500/10 blur-2xl"
+            aria-hidden="true"
+          />
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0D0E13] shadow-2xl shadow-black/60">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#12141C] px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
+                <span className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
+                <span className="h-3 w-3 rounded-full bg-[#28C840]" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">{current.title}</h3>
-              <p className="text-white/60 text-sm max-w-sm">{current.description}</p>
+              <div className="mx-auto text-[11px] text-gray-500">
+                CLEER — {current.title}
+              </div>
+              <div className="w-14" />
+            </div>
+            <img
+              src={current.src}
+              alt={`CLEER ${current.title.toLowerCase()} — ${current.description}`}
+              className="w-full"
+            />
+            <div className="border-t border-white/[0.06] bg-[#12141C] px-6 py-4">
+              <div className="text-sm font-semibold text-white">{current.title}</div>
+              <div className="mt-0.5 text-xs text-gray-500">{current.description}</div>
             </div>
           </div>
         </div>
 
         {/* Thumbnails */}
-        <div className="grid grid-cols-4 gap-3">
-          {SCREENSHOTS.map((shot, i) => (
+        <div className="mt-8 grid grid-cols-3 gap-3 md:grid-cols-6">
+          {SHOTS.map((shot, i) => (
             <button
               key={shot.id}
               onClick={() => setActive(i)}
-              className={`rounded-lg border p-3 text-left transition-all ${
+              className={`group overflow-hidden rounded-xl border text-left transition-all ${
                 i === active
-                  ? 'border-violet-500/50 bg-violet-500/10'
-                  : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                  ? 'border-emerald-500/50 ring-2 ring-emerald-500/30'
+                  : 'border-white/[0.07] hover:border-white/[0.15]'
               }`}
+              aria-pressed={i === active}
+              aria-label={`Show ${shot.title}`}
             >
-              <div className="text-sm font-medium text-gray-200 mb-1">{shot.title}</div>
-              <div className="text-xs text-gray-500">{shot.description}</div>
+              <img
+                src={shot.src}
+                alt=""
+                loading="lazy"
+                className={`aspect-[16/10] w-full object-cover object-top transition-opacity ${
+                  i === active ? 'opacity-100' : 'opacity-50 group-hover:opacity-80'
+                }`}
+              />
             </button>
           ))}
         </div>

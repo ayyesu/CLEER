@@ -102,7 +102,11 @@ export interface CleerApi {
     onResultBatch: (callback: (entries: ClassifiedScanEntry[]) => void) => void;
     onComplete: (callback: (summary: ScanSummary) => void) => void;
     onError: (callback: (error: { message: string }) => void) => void;
+    onPermissionDenied: (callback: (paths: string[]) => void) => void;
     removeAllListeners: () => void;
+  };
+  system: {
+    getHomeDir: () => Promise<string>;
   };
   dedupe: {
     start: (options?: { minSizeBytes?: number }) => Promise<{ groups: number }>;
@@ -129,6 +133,8 @@ export interface CleerApi {
     setEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
   };
 }
+
+export type CleerApiWindow = { cleer: CleerApi };
 
 export const CATEGORY_LABELS: Record<CleanupCategory, string> = {
   'temp': 'Temporary Files',

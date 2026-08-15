@@ -6,8 +6,13 @@ directories:
   buildResources: build
 files:
   - dist/**/*
+  - rules/**/*
   - package.json
 asar: true
+# Worker threads cannot always load scripts from inside the asar archive;
+# unpack them so the scanner workers resolve reliably on all platforms.
+asarUnpack:
+  - dist/main/workers/**
 
 # afterSign: scripts/notarize.js — uncomment when signing certificates are configured
 
@@ -15,7 +20,6 @@ mac:
   category: public.app-category.utilities
   darkModeSupport: true
   hardenedRuntime: true
-  gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   target:
@@ -28,6 +32,7 @@ mac:
         - x64
         - arm64
 dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
   contents:
     - x: 130
       y: 220
@@ -53,9 +58,12 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: CLEER
+  artifactName: ${productName}-Setup-${version}.${ext}
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   license: LICENSE
+portable:
+  artifactName: ${productName}-${version}-win.${ext}
 
 linux:
   category: Utility
@@ -70,16 +78,8 @@ linux:
   vendor: CLEER
   synopsis: Computer Lifecycle, Efficiency & Environment Recovery
   description: Cross-platform disk space reclaimer
-deb:
-  depends:
-    - gconf2
-    - gconf-service
-    - libnotify4
-    - libappindicator1
-    - libxtst6
-    - libnss3
 appImage:
-  artifactName: ${productName}-${version}-${arch}.${ext}
+  artifactName: ${productName}-${version}-x86_64.${ext}
 
 publish:
   provider: github

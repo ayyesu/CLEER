@@ -85,7 +85,10 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate version.ts
+        run: node scripts/generate-version.cjs
 
       - name: Update version.json
         run: |
@@ -96,16 +99,27 @@ jobs:
             "publishedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "assets": [
               { "name": "CLEER-Setup-${{ steps.version.outputs.VERSION }}.exe", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-Setup-${{ steps.version.outputs.VERSION }}.exe" },
-              { "name": "CLEER-${{ steps.version.outputs.VERSION }}.dmg", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${{ steps.version.outputs.VERSION }}.dmg" },
+              { "name": "CLEER-${{ steps.version.outputs.VERSION }}-arm64.dmg", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${{ steps.version.outputs.VERSION }}-arm64.dmg" },
               { "name": "CLEER-${{ steps.version.outputs.VERSION }}-x86_64.AppImage", "url": "https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${{ steps.version.outputs.VERSION }}-x86_64.AppImage" }
             ]
           }
           EOF
 
-      - name: Commit and push version update
+      - name: Commit website version files to default branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add website/public/version.json
-          git commit -m "chore: update website version to v${{ steps.version.outputs.VERSION }}"
-          git push
+          # Tag checkouts are detached; use the contents API so the update lands on
+          # the default branch without a git push (no fast-forward conflicts).
+          BRANCH="$(gh repo view --json defaultBranchRef -q .defaultBranch.name)"
+          MESSAGE="chore: update website version to v${{ steps.version.outputs.VERSION }}"
+          for FILE in website/public/version.json website/src/version.ts; do
+            SHA="$(gh api "repos/$GITHUB_REPOSITORY/contents/$FILE?ref=$BRANCH" --jq .sha)"
+            CONTENT="$(base64 -w0 "$FILE")"
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/$FILE" \
+              -f message="$MESSAGE" \
+              -f content="$CONTENT" \
+              -f sha="$SHA" \
+              -f branch="$BRANCH" > /dev/null
+          done
+          echo "Website version files updated on $BRANCH"

@@ -6,12 +6,31 @@ function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      webSecurity: true,
+      spellcheck: false,
     },
+  });
+
+  win.once('ready-to-show', () => {
+    win.show();
+  });
+
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
+  win.webContents.on('will-navigate', (event, url) => {
+    const currentUrl = win.webContents.getURL();
+    const allowed = url.startsWith('file://') ||
+      (process.env.VITE_DEV_SERVER_URL && url.startsWith(process.env.VITE_DEV_SERVER_URL));
+    if (currentUrl && !allowed) {
+      event.preventDefault();
+    }
   });
 
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -24,7 +43,7 @@ function createWindow(): BrowserWindow {
 }
 
 function setupAutoUpdater(): void {
-  if (process.env.VITE_DEV_SERVER_URL) return;
+  if (!app.isPackaged) return;
 
   import('electron-updater').then(({ autoUpdater }) => {
     autoUpdater.checkForUpdatesAndNotify();
@@ -42,9 +61,13 @@ function setupAutoUpdater(): void {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.cleer.app');
+  }
+
   const rulesDir = process.env.VITE_DEV_SERVER_URL
     ? join(process.cwd(), 'rules')
-    : join(__dirname, '../../rules');
+    : join(app.getAppPath(), 'rules');
 
   loadRules(rulesDir);
   registerIpcHandlers();

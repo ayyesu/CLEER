@@ -72,56 +72,119 @@ if (unresolvedAliases === 0) {
   fail(`${unresolvedAliases} files still have unresolved aliases`);
 }
 
-console.log('\n5. Renderer bundle has no __dirname');
-const rendererJs = path.join(distRenderer, 'assets');
-let rendererHasDirname = false;
-if (fs.existsSync(rendererJs)) {
-  for (const f of fs.readdirSync(rendererJs)) {
-    if (f.endsWith('.js')) {
-      const content = fs.readFileSync(path.join(rendererJs, f), 'utf-8');
-      const lines = content.split('\n');
-      const problemLines = lines.filter(l => {
-        const idx = l.indexOf('__dirname');
-        if (idx < 0) return false;
-        const before = idx > 0 ? l[idx - 1] : '';
-        const after = idx + 10 < l.length ? l[idx + 10] : '';
-        const isQuote = (c) => c === '"' || c === "'";
-        return !(isQuote(before) && isQuote(after));
-      });
-      if (problemLines.length > 0) {
-        rendererHasDirname = true;
+console.log('\n5. Renderer bundle is browser-safe');
+const rendererAssets = path.join(distRenderer, 'assets');
+let bundleProblems = [];
+if (fs.existsSync(rendererAssets)) {
+  for (const f of fs.readdirSync(rendererAssets)) {
+    if (!f.endsWith('.js')) continue;
+    const content = fs.readFileSync(path.join(rendererAssets, f), 'utf-8');
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const isQuote = (c) => c === '"' || c === "'";
+      // __dirname: only a problem when not inside a string literal
+      const dirnameIdx = line.indexOf('__dirname');
+      if (dirnameIdx >= 0) {
+        const before = dirnameIdx > 0 ? line[dirnameIdx - 1] : '';
+        const after = dirnameIdx + 9 < line.length ? line[dirnameIdx + 9] : '';
+        if (!(isQuote(before) && isQuote(after))) {
+          bundleProblems.push(`${f}:${i + 1}: __dirname outside string literal`);
+        }
+      }
+      // process.env and direct electron imports must be absent entirely
+      if (line.includes('process.env')) {
+        bundleProblems.push(`${f}:${i + 1}: process.env reference`);
+      }
+      if (/require\(["']electron["']\)/.test(line) || /from ["']electron["']/.test(line)) {
+        bundleProblems.push(`${f}:${i + 1}: direct electron import`);
       }
     }
   }
 }
-if (!rendererHasDirname) {
-  pass('Renderer bundle has no __dirname references');
+if (bundleProblems.length === 0) {
+  pass('Renderer bundle has no __dirname / process.env / electron imports');
 } else {
-  fail('Renderer bundle contains __dirname — will crash in browser context');
+  for (const p of bundleProblems.slice(0, 10)) {
+    console.error(`  FAIL: ${p}`);
+  }
+  fail(`Renderer bundle is not browser-safe (${bundleProblems.length} problem(s))`);
 }
 
-console.log('\n6. Shared types are built');
+console.log('\n6. Main-process runtime deps are declared in dependencies');
+const NODE_BUILTINS = new Set([
+  'assert', 'buffer', 'child_process', 'crypto', 'dns', 'events', 'fs', 'http', 'https',
+  'module', 'net', 'os', 'path', 'querystring', 'readline', 'stream', 'string_decoder',
+  'timers', 'tls', 'tty', 'url', 'util', 'worker_threads', 'zlib', 'node:test', 'console',
+  'cluster', 'constants', 'domain', 'inspector', 'perf_hooks', 'process', 'punycode',
+  'repl', 'sqlite', 'trace_events', 'v8', 'vm', 'wasi', 'async_hooks', 'diagnostics_channel',
+  'dgram', 'test', 'test/reporters', 'sea', 'fs/promises', 'path/posix', 'path/win32',
+  'stream/promises', 'stream/web', 'timers/promises', 'util/types', 'node:fs/promises',
+]);
+const declaredDeps = new Set(Object.keys(pkg.dependencies || {}));
+const declaredDevDeps = new Set(Object.keys(pkg.devDependencies || {}));
+const missingRuntimeDeps = new Set();
+const devOnlyRuntimeDeps = new Set();
+for (const file of mainFiles) {
+  const content = fs.readFileSync(file, 'utf-8');
+  const requires = content.match(/require\(["']([^"']+)["']\)/g) || [];
+  for (const r of requires) {
+    const mod = r.slice(9, -2);
+    if (!mod || mod.startsWith('.') || mod.startsWith('/') || mod.startsWith('@shared')) continue;
+    if (mod === 'electron' || NODE_BUILTINS.has(mod)) continue;
+    if (!declaredDeps.has(mod)) {
+      missingRuntimeDeps.add(mod);
+      if (declaredDevDeps.has(mod)) devOnlyRuntimeDeps.add(mod);
+    }
+  }
+}
+if (missingRuntimeDeps.size === 0) {
+  pass('All main-process require()s are satisfied by package.json dependencies');
+} else {
+  if (devOnlyRuntimeDeps.size > 0) {
+    fail(`Runtime deps only in devDependencies (won't be packaged): ${[...devOnlyRuntimeDeps].join(', ')}`);
+  } else {
+    fail(`Missing runtime dependencies: ${[...missingRuntimeDeps].join(', ')}`);
+  }
+}
+
+console.log('\n7. Shared types are built');
 if (fs.existsSync(path.join(distShared, 'types.js'))) {
   pass('dist/shared/types.js exists');
 } else {
   fail('dist/shared/types.js missing');
 }
 
-console.log('\n7. IPC channels are consistent');
-const preloadChannels = preloadContent.match(/[A-Z_]+:\s*['"](\w+:\w+)['"]/g) || [];
-let mainChannels = [];
+console.log('\n8. IPC channels are consistent');
+function extractChannels(content) {
+  const values = content.match(/['"]([\w-]+:[\w-]+)['"]/g) || [];
+  return new Set(values.map((v) => v.slice(1, -1)));
+}
+const preloadChannels = extractChannels(preloadContent);
+let mainChannels = new Set();
 const ipcChannelsFile = path.join(distShared, 'ipc', 'ipcChannels.js');
 if (fs.existsSync(ipcChannelsFile)) {
   const mainContent = fs.readFileSync(ipcChannelsFile, 'utf-8');
-  mainChannels = mainContent.match(/[A-Z_]+:\s*['"](\w+:\w+)['"]/g) || [];
+  mainChannels = extractChannels(mainContent);
 }
-if (preloadChannels.length > 0 && mainChannels.length > 0) {
-  pass(`IPC channels: ${mainChannels.length} in main, ${preloadChannels.length} in preload`);
+if (mainChannels.size > 0 && preloadChannels.size > 0) {
+  const missingInPreload = [...mainChannels].filter((c) => !preloadChannels.has(c));
+  const missingInMain = [...preloadChannels].filter((c) => !mainChannels.has(c));
+  if (missingInPreload.length === 0 && missingInMain.length === 0) {
+    pass(`IPC channels match exactly (${mainChannels.size} in main, ${preloadChannels.size} in preload)`);
+  } else {
+    if (missingInPreload.length > 0) {
+      fail(`Channels missing in preload: ${missingInPreload.join(', ')}`);
+    }
+    if (missingInMain.length > 0) {
+      fail(`Channels missing in main: ${missingInMain.join(', ')}`);
+    }
+  }
 } else {
-  fail('IPC channels mismatch or missing');
+  fail('IPC channels missing in one or both sides');
 }
 
-console.log('\n8. Package.json version matches tag (if tagged)');
+console.log('\n9. Package.json version matches tag (if tagged)');
 const tagVersion = process.env.GITHUB_REF_NAME || '';
 if (tagVersion.startsWith('v')) {
   const expected = tagVersion.slice(1);

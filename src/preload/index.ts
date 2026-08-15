@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ClassifiedScanEntry,
+  CleerApi,
   DeletionOptions,
   DuplicateGroup,
   PermissionStatus,
@@ -32,9 +33,11 @@ const IPC_CHANNELS = {
   SCHEDULER_STATUS: 'scheduler:status',
   SCHEDULER_SCAN_DUE: 'scheduler:scan-due',
   NOTIFICATION_SETTINGS: 'notification:settings',
+  SCAN_PERMISSION_DENIED: 'scan:permission-denied',
+  SYSTEM_GET_HOME: 'system:get-home',
 } as const;
 
-const cleerApi = {
+const cleerApi: CleerApi = {
   scan: {
     start: (options: ScanOptions) =>
       ipcRenderer.invoke(IPC_CHANNELS.SCAN_START, options),
@@ -53,14 +56,22 @@ const cleerApi = {
     onError: (callback: (error: { message: string }) => void) => {
       ipcRenderer.on(IPC_CHANNELS.SCAN_ERROR, (_e, data) => callback(data));
     },
+    onPermissionDenied: (callback: (paths: string[]) => void) => {
+      ipcRenderer.on(IPC_CHANNELS.SCAN_PERMISSION_DENIED, (_e, data) => callback(data));
+    },
     removeAllListeners: () => {
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_PROGRESS);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_RESULT_BATCH);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_COMPLETE);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_ERROR);
+      ipcRenderer.removeAllListeners(IPC_CHANNELS.SCAN_PERMISSION_DENIED);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.DEDUPE_PROGRESS);
       ipcRenderer.removeAllListeners(IPC_CHANNELS.DEDUPE_COMPLETE);
     },
+  },
+  system: {
+    getHomeDir: (): Promise<string> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_HOME),
   },
   dedupe: {
     start: (options?: { minSizeBytes?: number }) =>

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=CLEER
+GenericName=Disk Space Reclaimer
+Comment=Computer Lifecycle, Efficiency & Environment Recovery — cross-platform disk space reclaimer
+Exec=cleer
+Icon=cleer
+Terminal=false
+Type=Application
+Categories=Utility;System;Filesystem;
+Keywords=disk;cleanup;storage;cache;
+StartupNotify=true

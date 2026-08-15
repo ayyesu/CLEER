@@ -1,6 +1,6 @@
 # Maintainer: ayyesu <ayyesu@users.noreply.github.com>
 pkgname=cleer
-pkgver=0.1.0
+pkgver=0.1.7
 pkgrel=1
 pkgdesc="Computer Lifecycle, Efficiency & Environment Recovery — cross-platform disk space reclaimer"
 arch=('x86_64')

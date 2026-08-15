@@ -1,4 +1,4 @@
-import { ipcMain, shell, BrowserWindow } from 'electron';
+import { app, ipcMain, shell, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/ipc/ipcChannels';
 import { createScannerEngine } from '../services/scannerEngine';
 import { createDeletionExecutor } from '../services/deletionExecutor';
@@ -55,7 +55,7 @@ export function registerIpcHandlers(): void {
           totalBytes: lastResults.reduce((s, e) => s + e.sizeBytes, 0),
         });
         if (scanner.permissionDeniedPaths.length > 0) {
-          sendToRenderers('scan:permission-denied', scanner.permissionDeniedPaths);
+          sendToRenderers(IPC_CHANNELS.SCAN_PERMISSION_DENIED, scanner.permissionDeniedPaths);
         }
       }
     });
@@ -123,6 +123,10 @@ export function registerIpcHandlers(): void {
     return readUndoJournal();
   });
 
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_HOME, async () => {
+    return app.getPath('home');
+  });
+
   ipcMain.handle(IPC_CHANNELS.PERMISSION_STATUS, async () => {
     return detectPermissions(process.platform as 'win32' | 'darwin' | 'linux');
   });
@@ -145,6 +149,8 @@ export function registerIpcHandlers(): void {
 
     let totalEntries = 0;
     let totalBytes = 0;
+    let scheduledWorkersDone = 0;
+    const scheduledWorkersTotal = options.categories.length;
 
     scheduledScanner.on('entries', (entries: ClassifiedScanEntry[]) => {
       totalEntries += entries.length;
@@ -152,12 +158,18 @@ export function registerIpcHandlers(): void {
     });
 
     scheduledScanner.on('worker-done', () => {
-      lastScheduledResults = { totalEntries, totalBytes };
-      scheduler.onScanComplete();
+      scheduledWorkersDone++;
+      if (scheduledWorkersDone >= scheduledWorkersTotal) {
+        lastScheduledResults = { totalEntries, totalBytes };
+        scheduler.onScanComplete();
+      }
     });
 
     scheduledScanner.on('error', () => {
-      scheduler.onScanComplete();
+      scheduledWorkersDone++;
+      if (scheduledWorkersDone >= scheduledWorkersTotal) {
+        scheduler.onScanComplete();
+      }
     });
 
     sendToRenderers(IPC_CHANNELS.SCHEDULER_SCAN_DUE, options);
