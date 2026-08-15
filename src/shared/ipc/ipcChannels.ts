@@ -20,6 +20,8 @@ export const IPC_CHANNELS = {
   SCHEDULER_STATUS: 'scheduler:status',
   SCHEDULER_SCAN_DUE: 'scheduler:scan-due',
   NOTIFICATION_SETTINGS: 'notification:settings',
+  SCAN_PERMISSION_DENIED: 'scan:permission-denied',
+  SYSTEM_GET_HOME: 'system:get-home',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

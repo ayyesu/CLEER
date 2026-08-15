@@ -12,7 +12,7 @@ const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-
 function replaceNodeGlobals(): Plugin {
   return {
     name: 'replace-node-globals',
-    generateBundle(options, bundle) {
+    generateBundle(_options, bundle) {
       for (const fileName of Object.keys(bundle)) {
         const chunk = bundle[fileName];
         if (chunk.type === 'chunk') {

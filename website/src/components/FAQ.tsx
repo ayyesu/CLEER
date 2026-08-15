@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 const FAQS = [
   {
     q: 'Is CLEER really free?',
-    a: 'Yes. CLEER is free and open source. There are no premium features, no subscriptions, and no hidden costs. You get the full application at no charge.',
+    a: 'Yes. CLEER is free. There are no premium features, no subscriptions, and no hidden costs. You get the full application at no charge.',
   },
   {
     q: 'Does CLEER delete files automatically?',
@@ -16,11 +16,11 @@ const FAQS = [
   },
   {
     q: 'What makes CLEER different from other disk cleaners?',
-    a: 'Three things: (1) It never deletes automatically — you always choose. (2) It\'s fully open source — anyone can audit the code. (3) It has zero telemetry — no data ever leaves your machine.',
+    a: 'Three things: (1) It never deletes automatically — you always choose. (2) Every action is journaled and files go to Trash, so you can recover anything. (3) It has zero telemetry — no data ever leaves your machine.',
   },
   {
     q: 'Does CLEER need administrator/root access?',
-    a: 'No. CLEER works with standard user permissions. It scans what it can access and clearly shows if any directories were skipped due to permissions. Running with elevated access allows scanning system directories, but it\'s optional.',
+    a: 'No. CLEER works with standard user permissions. It scans what it can access and clearly shows if any directories were skipped. Running with elevated access allows scanning system directories, but it is optional.',
   },
   {
     q: 'What operating systems are supported?',
@@ -28,7 +28,7 @@ const FAQS = [
   },
   {
     q: 'Will I get security warnings when installing?',
-    a: 'If you install through a package manager (Homebrew, Chocolatey), no warnings appear. If you download directly, your OS may show an "untrusted developer" warning because CLEER isn\'t signed with a commercial certificate. This is normal for free, open source software — you can safely proceed.',
+    a: 'If you install through a package manager (Homebrew, Chocolatey), no warnings appear. If you download directly, your OS may show an "untrusted developer" warning because CLEER is not signed with a commercial certificate. This is normal for small independent software — you can safely proceed.',
   },
   {
     q: 'How does CLEER handle non-English file names?',
@@ -37,42 +37,48 @@ const FAQS = [
 ];
 
 export function FAQ() {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-20 px-6 bg-white/[0.01]">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Frequently Asked Questions
-          </h2>
+    <section id="faq" className="border-t border-white/[0.06] py-24">
+      <div className="section max-w-3xl">
+        <div className="mb-14 text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs font-medium text-gray-400">
+            FAQ
+          </div>
+          <h2 className="section-heading">Frequently asked questions</h2>
+          <p className="section-sub">Everything you need to know before you install.</p>
         </div>
 
         <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              className="bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden"
-            >
-              <button
-                onClick={() => setOpenIdx(openIdx === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left"
-                aria-expanded={openIdx === i}
+          {FAQS.map((faq, i) => {
+            const open = openIdx === i;
+            return (
+              <div
+                key={i}
+                className={`card overflow-hidden transition-colors ${
+                  open ? 'border-emerald-500/25 bg-white/[0.03]' : 'hover:bg-white/[0.03]'
+                }`}
               >
-                <span className="font-medium text-gray-200 pr-4">{faq.q}</span>
-                <ChevronDown
-                  className={`w-5 h-5 text-gray-500 shrink-0 transition-transform ${
-                    openIdx === i ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              {openIdx === i && (
-                <div className="px-5 pb-5 text-sm text-gray-400 leading-relaxed">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  onClick={() => setOpenIdx(open ? null : i)}
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left"
+                  aria-expanded={open}
+                >
+                  <span className="font-medium text-gray-100">{faq.q}</span>
+                  <ChevronDown
+                    className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 ${
+                      open ? 'rotate-180 text-emerald-400' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+                {open && (
+                  <div className="px-5 pb-5 text-sm leading-relaxed text-gray-400">{faq.a}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -15,7 +15,7 @@ export interface Asset {
 
 export const ASSETS: Asset[] = [
   { name: 'CLEER-Setup-${pkg.version}.exe', url: 'https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-Setup-${pkg.version}.exe' },
-  { name: 'CLEER-${pkg.version}.dmg', url: 'https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${pkg.version}.dmg' },
+  { name: 'CLEER-${pkg.version}-arm64.dmg', url: 'https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${pkg.version}-arm64.dmg' },
   { name: 'CLEER-${pkg.version}-x86_64.AppImage', url: 'https://github.com/ayyesu/CLEER/releases/latest/download/CLEER-${pkg.version}-x86_64.AppImage' },
 ];
 `;

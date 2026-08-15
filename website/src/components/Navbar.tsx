@@ -1,35 +1,41 @@
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Download } from 'lucide-react';
+import { Logo } from './Logo';
+import { useRelease } from '../useRelease';
 
 const LINKS = [
   { href: '#features', label: 'Features' },
+  { href: '#screenshots', label: 'Screenshots' },
   { href: '#how-it-works', label: 'How It Works' },
   { href: '#trust', label: 'Safety' },
-  { href: '#download', label: 'Download' },
+  { href: '#faq', label: 'FAQ' },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const release = useRelease();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08090B]/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <a href="#" className="flex items-center gap-2.5" aria-label="CLEER home">
-          <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <rect width="32" height="32" rx="8" fill="#06B6D4" />
-            <path d="M8 22L16 10L24 22H8Z" fill="#08090B" />
-            <path d="M12 22H20" stroke="#08090B" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <span className="text-lg font-semibold tracking-tight">CLEER</span>
+          <Logo />
+          <span className="text-lg font-bold tracking-tight text-white">CLEER</span>
+          <span
+            className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+            title={`Current release: ${release.tag}`}
+          >
+            v{release.version}
+          </span>
         </a>
 
         <nav className="hidden md:block" aria-label="Main navigation">
-          <ul className="flex items-center gap-8">
+          <ul className="flex items-center gap-7">
             {LINKS.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="text-sm text-gray-400 transition-colors hover:text-gray-100"
+                  className="text-sm text-gray-400 transition-colors hover:text-white"
                 >
                   {link.label}
                 </a>
@@ -38,17 +44,15 @@ export function Navbar() {
           </ul>
         </nav>
 
-        <div className="hidden md:block">
-          <a
-            href="#download"
-            className="inline-flex rounded-lg bg-[#06B6D4] px-4 py-2 text-sm font-medium text-[#08090B] transition-all hover:bg-[#22D3EE]"
-          >
+        <div className="hidden items-center gap-3 md:flex">
+          <a href="#download" className="btn-primary !px-4 !py-2">
+            <Download className="h-4 w-4" aria-hidden="true" />
             Download
           </a>
         </div>
 
         <button
-          className="md:hidden text-gray-400"
+          className="text-gray-400 md:hidden"
           onClick={() => setOpen(!open)}
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
@@ -58,25 +62,25 @@ export function Navbar() {
       </div>
 
       {open && (
-        <nav className="border-t border-white/[0.06] bg-[#08090B] px-6 py-4 md:hidden" aria-label="Mobile navigation">
-          <ul className="space-y-3">
+        <nav
+          className="border-t border-white/[0.06] bg-[#08090B] px-6 py-4 md:hidden"
+          aria-label="Mobile navigation"
+        >
+          <ul className="space-y-1">
             {LINKS.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="block text-sm text-gray-400 hover:text-gray-100"
+                  className="block rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/[0.04] hover:text-white"
                   onClick={() => setOpen(false)}
                 >
                   {link.label}
                 </a>
               </li>
             ))}
-            <li>
-              <a
-                href="#download"
-                className="inline-flex rounded-lg bg-[#06B6D4] px-4 py-2 text-sm font-medium text-[#08090B]"
-                onClick={() => setOpen(false)}
-              >
+            <li className="pt-2">
+              <a href="#download" className="btn-primary w-full" onClick={() => setOpen(false)}>
+                <Download className="h-4 w-4" aria-hidden="true" />
                 Download
               </a>
             </li>
